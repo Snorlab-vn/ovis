@@ -207,19 +207,23 @@
 
 /* Settings -> Sidebar rows -> One line: a workspace row's height, the place dim after the title.
    The title keeps its width first; the place takes what is left and gives way with an ellipsis.
-   A pane's plugin tokens add their line under it. */
+   A pane's plugin tokens add their line under it. The folder tree's pane rows (Sidebar.css) are
+   always drawn so. */
 .agents-sidebar.is-one-line .agent-row { min-height: var(--side-row); }
 
-.agents-sidebar.is-one-line .agent-main {
+.agents-sidebar.is-one-line .agent-main,
+.workspace-panes .agent-main {
   display: flex;
   align-items: baseline;
   gap: var(--space-2);
   min-width: 0;
 }
 
-.agents-sidebar.is-one-line .agent-title-line { flex: 0 1 auto; }
+.agents-sidebar.is-one-line .agent-title-line,
+.workspace-panes .agent-title-line { flex: 0 1 auto; }
 
-.agents-sidebar.is-one-line .agent-context {
+.agents-sidebar.is-one-line .agent-context,
+.workspace-panes .agent-context {
   flex: 1 1 0;
   min-width: 0;
 }

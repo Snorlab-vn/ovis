@@ -1,15 +1,18 @@
 import { Fragment, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type AnimationEvent, type DragEvent, type KeyboardEvent, type MouseEvent } from "react";
-import { ChevronDown, ChevronRight, Ellipsis, Folder, FolderOpen, GitBranch, History, Layers, ListChecks, Pencil, Pin, PinOff, Plus, Terminal, Trash2, TriangleAlert, X } from "lucide-react";
+import { Bell, BellOff, ChevronDown, ChevronRight, Ellipsis, Folder, FolderOpen, GitBranch, History, Layers, ListChecks, Pencil, Pin, PinOff, Plus, Terminal, Trash2, TriangleAlert, X } from "lucide-react";
 
 import "./Sidebar.css";
+// the folder tree draws agent rows under their workspace, styled as the Agents list's
+import "./AgentSidebar.css";
 
-import type { AgentStatus, PaneInfo, PlanSummary, SessionSnapshot, WorkspaceInfo } from "../../shared/protocol.ts";
+import type { AgentStatus, PaneInfo, PlanSummary, SessionSnapshot, TabInfo, WorkspaceInfo } from "../../shared/protocol.ts";
+import { paneTokenValues, type AgentRowTokens } from "../../shared/pane-tokens.ts";
 import { paneTitle } from "../../shared/notify-policy.ts";
 import { MAX_LABEL_CHARS } from "../../shared/labels.ts";
 import { useMachineApi, useMachineId, useReorderCoordinator } from "../lib/machineContext.tsx";
 import type { AppActions } from "../lib/actions.ts";
 import { indicatorGlyph, knownStatus, rollupStatus, STATUS_WORD } from "../lib/status.ts";
-import { AgentMark } from "./AgentMark.tsx";
+import { AgentMark, hasAgentMark } from "./AgentMark.tsx";
 import { WorkspaceFavicon } from "./WorkspaceFavicon.tsx";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { RowMenu, type RowMenuItem } from "./RowMenu.tsx";
@@ -21,6 +24,8 @@ import { useT } from "../lib/i18n.ts";
 import { userErrorMessage } from "../lib/userError.ts";
 import { rosterPanes } from "../lib/dagPane.ts";
 import { useSidebarActivity } from "../lib/sidebarActivity.tsx";
+import { currentAgentRowTokens, subscribeAgentRowTokens } from "../lib/agentRowTokens.ts";
+import { currentPaneMutes, paneMuteKey, setPaneMutes, subscribePaneMutes, togglePaneMute } from "../lib/paneMutes.ts";
 import { filterWorkspaceGroups, machineFilter } from "../lib/sidebarFilter.ts";
 import { useSidebarFilter } from "../lib/sidebarFilterContext.ts";
 import { useSettings } from "../lib/settings.ts";
@@ -32,7 +37,7 @@ import { watchTouchReorder } from "../lib/touchReorder.ts";
 import { folderGroups, placeBlock, workspaceFolder, workspaceMoves, worktreeGroups as groupWorktrees, type FolderGroup } from "../lib/workspaceOrder.ts";
 import { worktreeLabel } from "../lib/worktreeName.ts";
 import { lastViewedPane, rememberViewedPane } from "../lib/lastViewedPane.ts";
-import { paneMark, sidebarAgents, workspaceAgentLabels } from "../lib/sidebarAgents.ts";
+import { agentContext, agentTabName, paneMark, sidebarAgents, workspaceAgentLabels, type SidebarAgent } from "../lib/sidebarAgents.ts";
 import { PANE_DRAG_TYPE, paneDragData } from "../lib/split.ts";
 import { currentSidebarPins, pinnedGroupIds, pinnedWorkspaceIds, pruneWorkspacePins, reorderWorkspacePins, setSidebarPins, splitPinnedGroups, subscribeSidebarPins, toggleSidebarPin, workspacePinKey, type WorkspaceGroup } from "../lib/sidebarPins.ts";
 
@@ -139,6 +144,82 @@ export function PlanBadge({ plan }: { plan?: PlanSummary }) {
       <ListChecks aria-hidden="true" />{plan.done}/{plan.total}
     </span>
   );
+}
+
+interface AgentRowBodyProps {
+  /** the agent's kind or name; null draws a terminal, for a shell */
+  mark: string | null;
+  /** the kind the mark draws, left off the second line: said for a screen reader, since the mark is aria-hidden */
+  markKind: string | null;
+  title: string;
+  /** the live name other tools address the agent by, when it has one */
+  name: string | null;
+  context: string;
+  /** what herdr plugins report on the pane (`$name` tokens), in the order herdr's rows draw them */
+  tokens: readonly string[];
+  backgroundTasks?: number;
+  plan?: PlanSummary;
+  status?: AgentStatus;
+  /** why a row the filter did not match is drawn all the same: it is the selected one */
+  note?: string | null;
+  /** its alerts are off for everyone (lib/paneMutes.ts): said beside the state, as a word for a screen reader */
+  muted: boolean;
+}
+
+/**
+ * One agent in a list: the coding agent's mark, what it is working on, who and where it is, what
+ * its plugins report, and how it is doing.
+ */
+export function AgentRowBody({ mark, markKind, title, name, context, tokens, backgroundTasks, plan, status, note = null, muted }: AgentRowBodyProps) {
+  const t = useT();
+  return <>
+    <span className="sidebar-mark" aria-hidden="true">{mark !== null ? <AgentMark agent={mark} size={18} /> : <Terminal />}</span>
+    <span className="agent-copy">
+      {markKind && <span className="visually-hidden">{markKind}: </span>}
+      <span className="agent-main">
+        <span className="agent-title-line">
+          <span className="agent-title">{title}</span>
+        </span>
+        {(name || context) && <span className="agent-context">
+          {name && <span className="agent-name">{name}</span>}
+          {name && context && " · "}
+          {context}
+        </span>}
+      </span>
+      {/* text as the plugin wrote it, never markup; its own line in either row height, cut where it is too long */}
+      {tokens.length > 0 && <span className="agent-tokens">{tokens.join(" · ")}</span>}
+    </span>
+    <span className="agent-row-status">
+      {note !== null && <span className="sidebar-filter-note">{note}</span>}<BackgroundBadge count={backgroundTasks} /><PlanBadge plan={plan} />
+      {muted && <span className="agent-muted" title={t("Alerts muted")} data-testid="alerts-muted"><BellOff aria-hidden="true" /><span className="visually-hidden">{t("Alerts muted")}</span></span>}
+    </span>
+    {/* drawn at the row's right edge, after its ⋯, as a workspace row's state is (AgentSidebar.css) */}
+    <span className="agent-row-state"><StatusBadge status={status} compact /></span>
+  </>;
+}
+
+/**
+ * What an agent row says of its pane, in the Agents list and under its workspace in the folder
+ * tree, where the workspace is the row above it and its label is left out.
+ */
+export function agentRowText(entry: SidebarAgent, { online, tabs, machineName, workspaceLabel, rowTokens, t }: {
+  online: boolean; tabs: readonly TabInfo[]; machineName: string | null; workspaceLabel: string; rowTokens: AgentRowTokens | null; t: ReturnType<typeof useT>;
+}) {
+  const { pane, tab, agent, agentLabel } = entry;
+  const title = pane.label?.trim() || agent?.title?.trim() || pane.title?.trim() || displayPaneTitle(pane);
+  const name = agent?.name?.trim() || null;
+  // the name has its own place on the line: the label beside it says the kind instead
+  const kindLabel = name !== null && agentLabel === name ? entry.canonicalAgent ?? agent?.title?.trim() ?? null : agentLabel;
+  const mark = paneMark(entry);
+  const markAgent = mark && hasAgentMark(mark) ? mark : null;
+  const parts = { agentLabel: kindLabel, title, markAgent, machineName, workspaceLabel, tabName: agentTabName(tab, tabs, t) };
+  const contextParts = agentContext(parts);
+  const context = contextParts.join(" · ");
+  const kind = kindLabel?.trim() || null;
+  const markKind = kind && kind !== title.trim() && !contextParts.includes(kind) ? kind : null;
+  // a PC that is away says nothing of its agents now, its plugins' words included
+  const tokens = online ? paneTokenValues(rowTokens, entry.canonicalAgent, pane.tokens ?? agent?.tokens) : [];
+  return { online, title, name, mark, context, markKind, tokens };
 }
 
 function cwdBasename(cwd: string | null | undefined): string {
@@ -326,6 +407,10 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions, watching = 
   // pinned workspaces stand first, in a card, in pin order (shared with the other browsers,
   // lib/preferencesSync.ts); their moves change pins, while the rest change herdr's order
   const pins = useSyncExternalStore(subscribeSidebarPins, currentSidebarPins, currentSidebarPins);
+  // the folder tree's agent rows read what the Agents list reads: mutes shared by every browser, herdr's row tokens
+  const muted = useSyncExternalStore(subscribePaneMutes, currentPaneMutes, currentPaneMutes);
+  const rowTokens = useSyncExternalStore(subscribeAgentRowTokens, currentAgentRowTokens, currentAgentRowTokens);
+  const [paneMenu, setPaneMenu] = useState<{ paneId: string; anchor: HTMLElement; point?: { x: number; y: number }; previousFocus?: HTMLElement | null } | null>(null);
   const pinnedIds = useMemo(() => pinnedWorkspaceIds(pins, machineId), [pins, machineId]);
   const shownGroups = useMemo(() => splitPinnedGroups(worktreeGroups, pinnedIds, (workspace) => workspace.workspace_id), [worktreeGroups, pinnedIds]);
   // under a filter only the kept rows are drawn, in the same order, in the same groups and cards; pins, folds
@@ -778,6 +863,51 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions, watching = 
         </div>
       </div>
       {inlineError?.workspaceId === workspace.workspace_id && <p className="sidebar-inline-error" role="alert">{inlineError.message}{inlineError.detail !== null && <><br /><code>{inlineError.detail}</code></>}</p>}
+      {/* in the folder tree a workspace of several panes lists them, as the Agents list would; the filter keeps its matches and the selection */}
+      {byFolder && panes.length > 1 && <ul className="pane-list workspace-panes">
+        {panes.filter((candidate) => filtered === null || filtered.panes.has(candidate.pane_id) || candidate.pane_id === selectedPaneId).map((candidate) => renderPaneRow(candidate, workspace))}
+      </ul>}
+    </li>;
+  };
+
+  /** one pane of a workspace in the folder tree: the Agents list's row, without the workspace it sits under */
+  const renderPaneRow = (pane: PaneInfo, workspace: WorkspaceInfo) => {
+    const selected = pane.pane_id === selectedPaneId;
+    const entry = agentByPane.get(pane.pane_id);
+    const tabs = snapshot?.tabs.filter((tab) => tab.workspace_id === workspace.workspace_id) ?? [];
+    const text = entry
+      ? agentRowText(entry, { online, tabs, machineName: null, workspaceLabel: "", rowTokens, t })
+      : { title: displayPaneTitle(pane), name: null, mark: null, context: "", markKind: null, tokens: [] };
+    const muteKey = paneMuteKey(machineId, pane.pane_id);
+    const isMuted = muted?.includes(muteKey) === true;
+    const menuOpen = paneMenu?.paneId === pane.pane_id;
+    const toggleMenu = (anchor: HTMLElement, point?: { x: number; y: number }, previousFocus?: HTMLElement | null): void => setPaneMenu(menuOpen ? null : { paneId: pane.pane_id, anchor, point, previousFocus });
+    return <li className={`agent-item${selected ? " is-selected" : ""}${online ? "" : " is-offline"}`} key={pane.pane_id} data-pane={pane.pane_id}
+      onMouseDownCapture={(event) => { if (event.button === 2 || (event.button === 0 && event.ctrlKey)) event.preventDefault(); }}
+      onContextMenu={(event) => onRowContextMenu(event, toggleMenu)}>
+      <button type="button" className="agent-select agent-row" disabled={!online} aria-current={selected ? "true" : undefined}
+        title={[pane.pane_id, text.title, text.context, ...text.tokens, pane.cwd].filter(Boolean).join("\n")}
+        onClick={() => actions.selectPane(pane.pane_id)}
+        draggable={online}
+        // dropped on the pane area, the row opens its pane in half of it (lib/split.ts)
+        onDragStart={(event) => {
+          event.dataTransfer.effectAllowed = "move";
+          event.dataTransfer.setData(PANE_DRAG_TYPE, paneDragData({ machineId, paneId: pane.pane_id }));
+        }}>
+        <AgentRowBody mark={text.mark} markKind={text.markKind} title={text.title} name={text.name} context={text.context} tokens={text.tokens}
+          backgroundTasks={online ? entry?.pane.background_tasks : 0} plan={online ? entry?.pane.plan : undefined} status={online ? activity.status(machineId, pane) : undefined} muted={isMuted} />
+      </button>
+      <div className="agent-actions">
+        <button type="button" className="sidebar-row-action row-menu-toggle" aria-label={t("More for {title}", { title: text.title })} aria-haspopup="menu" aria-expanded={menuOpen} onClick={(event) => toggleMenu(event.currentTarget)}>
+          <Ellipsis aria-hidden="true" />
+        </button>
+      </div>
+      {/* one switch for every alert channel and every browser (lib/paneMutes.ts); a watching device sees its state and cannot flip it */}
+      {menuOpen && <RowMenu anchor={paneMenu.anchor} point={paneMenu.point} restoreFocusTo={paneMenu.previousFocus} title={text.title} subtitle={text.context || undefined} detail={text.tokens.join(" · ") || undefined} onClose={() => setPaneMenu(null)} items={muted === null ? [] : [{
+        id: "mute", label: isMuted ? t("Unmute alerts") : t("Mute alerts"), icon: isMuted ? Bell : BellOff, checked: isMuted, disabled: watching,
+        // ponytail: no prune of gone panes' mutes here (the Agents list prunes across every PC); add one if the list grows
+        run: () => setPaneMutes(togglePaneMute(muted, muteKey)),
+      }]} />}
     </li>;
   };
 

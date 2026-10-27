@@ -1,16 +1,13 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { Bell, BellOff, ChevronDown, ChevronRight, Ellipsis, Pin, PinOff, Terminal } from "lucide-react";
+import { Bell, BellOff, ChevronDown, ChevronRight, Ellipsis, Pin, PinOff } from "lucide-react";
 
 import type { Machine } from "../../shared/machines.ts";
 import { paneStorageId } from "../../shared/machines.ts";
-import { paneTokenValues } from "../../shared/pane-tokens.ts";
-import type { AgentStatus, PlanSummary } from "../../shared/protocol.ts";
 import { currentAgentRowTokens, subscribeAgentRowTokens } from "../lib/agentRowTokens.ts";
 import { useT } from "../lib/i18n.ts";
 import { useAnnouncedText } from "../lib/useAnnouncedText.ts";
 import { agentRoster, type AgentRow } from "../lib/agentRoster.ts";
 import { currentPaneMutes, paneMuteKey, prunePaneMutes, setPaneMutes, subscribePaneMutes, togglePaneMute } from "../lib/paneMutes.ts";
-import { agentContext, agentTabName, paneMark } from "../lib/sidebarAgents.ts";
 import { useSettings } from "../lib/settings.ts";
 import { useSidebarActivity } from "../lib/sidebarActivity.tsx";
 import { machineFilter } from "../lib/sidebarFilter.ts";
@@ -18,62 +15,9 @@ import { useSidebarFilter } from "../lib/sidebarFilterContext.ts";
 import { useHiddenMachines } from "../lib/hiddenMachines.ts";
 import { currentSidebarPins, pruneSidebarPins, setSidebarPins, sidebarPinKey, subscribeSidebarPins, toggleSidebarPin } from "../lib/sidebarPins.ts";
 import { PANE_DRAG_TYPE, paneDragData } from "../lib/split.ts";
-import { AgentMark, hasAgentMark } from "./AgentMark.tsx";
 import { RowMenu } from "./RowMenu.tsx";
-import { BackgroundBadge, displayPaneTitle, onRowContextMenu, PlanBadge, StatusBadge } from "./Sidebar.tsx";
+import { AgentRowBody, agentRowText, onRowContextMenu } from "./Sidebar.tsx";
 import "./AgentSidebar.css";
-
-interface AgentRowBodyProps {
-  /** the agent's kind or name; null draws a terminal, for a shell */
-  mark: string | null;
-  /** the kind the mark draws, left off the second line: said for a screen reader, since the mark is aria-hidden */
-  markKind: string | null;
-  title: string;
-  /** the live name other tools address the agent by, when it has one */
-  name: string | null;
-  context: string;
-  /** what herdr plugins report on the pane (`$name` tokens), in the order herdr's rows draw them */
-  tokens: readonly string[];
-  backgroundTasks?: number;
-  plan?: PlanSummary;
-  status?: AgentStatus;
-  /** why a row the filter did not match is drawn all the same: it is the selected one */
-  note?: string | null;
-  /** its alerts are off for everyone (lib/paneMutes.ts): said beside the state, as a word for a screen reader */
-  muted: boolean;
-}
-
-/**
- * One agent in a list: the coding agent's mark, what it is working on, who and where it is, what
- * its plugins report, and how it is doing.
- */
-function AgentRowBody({ mark, markKind, title, name, context, tokens, backgroundTasks, plan, status, note = null, muted }: AgentRowBodyProps) {
-  const t = useT();
-  return <>
-    <span className="sidebar-mark" aria-hidden="true">{mark !== null ? <AgentMark agent={mark} size={18} /> : <Terminal />}</span>
-    <span className="agent-copy">
-      {markKind && <span className="visually-hidden">{markKind}: </span>}
-      <span className="agent-main">
-        <span className="agent-title-line">
-          <span className="agent-title">{title}</span>
-        </span>
-        {(name || context) && <span className="agent-context">
-          {name && <span className="agent-name">{name}</span>}
-          {name && context && " · "}
-          {context}
-        </span>}
-      </span>
-      {/* text as the plugin wrote it, never markup; its own line in either row height, cut where it is too long */}
-      {tokens.length > 0 && <span className="agent-tokens">{tokens.join(" · ")}</span>}
-    </span>
-    <span className="agent-row-status">
-      {note !== null && <span className="sidebar-filter-note">{note}</span>}<BackgroundBadge count={backgroundTasks} /><PlanBadge plan={plan} />
-      {muted && <span className="agent-muted" title={t("Alerts muted")} data-testid="alerts-muted"><BellOff aria-hidden="true" /><span className="visually-hidden">{t("Alerts muted")}</span></span>}
-    </span>
-    {/* drawn at the row's right edge, after its ⋯, as a workspace row's state is (AgentSidebar.css) */}
-    <span className="agent-row-state"><StatusBadge status={status} compact /></span>
-  </>;
-}
 
 export interface AgentSidebarProps {
   machines: Machine[];
@@ -166,25 +110,14 @@ export function AgentSidebar({ machines, selectedMachineId, selectedPaneId, stat
   const machineName = (machine: Machine): string | null => machines.length > 1 ? machine.name : null;
 
   // what a row says of its agent, for the row and for its open menu
-  const describe = ({ machine, entry }: AgentRow) => {
-    const { pane, workspace, tab, agent, agentLabel } = entry;
-    const online = machine.state === "connected";
-    const title = pane.label?.trim() || agent?.title?.trim() || pane.title?.trim() || displayPaneTitle(pane);
-    const name = agent?.name?.trim() || null;
-    // the name has its own place on the line: the label beside it says the kind instead
-    const kindLabel = name !== null && agentLabel === name ? entry.canonicalAgent ?? agent?.title?.trim() ?? null : agentLabel;
-    const tabs = machine.snapshot?.tabs.filter((candidate) => candidate.workspace_id === workspace.workspace_id) ?? [];
-    const mark = paneMark(entry);
-    const markAgent = mark && hasAgentMark(mark) ? mark : null;
-    const parts = { agentLabel: kindLabel, title, markAgent, machineName: machineName(machine), workspaceLabel: workspace.label, tabName: agentTabName(tab, tabs, t) };
-    const contextParts = agentContext(parts);
-    const context = contextParts.join(" · ");
-    const kind = kindLabel?.trim() || null;
-    const markKind = kind && kind !== title.trim() && !contextParts.includes(kind) ? kind : null;
-    // a PC that is away says nothing of its agents now, its plugins' words included
-    const tokens = online ? paneTokenValues(rowTokens, entry.canonicalAgent, pane.tokens ?? agent?.tokens) : [];
-    return { online, title, name, mark, context, markKind, tokens };
-  };
+  const describe = ({ machine, entry }: AgentRow) => agentRowText(entry, {
+    online: machine.state === "connected",
+    tabs: machine.snapshot?.tabs.filter((candidate) => candidate.workspace_id === entry.workspace.workspace_id) ?? [],
+    machineName: machineName(machine),
+    workspaceLabel: entry.workspace.label,
+    rowTokens,
+    t,
+  });
 
   const agentItem = (row: AgentRow) => {
     const { machine, entry } = row;

@@ -16,6 +16,7 @@ import { SidebarFilterProvider, useSidebarFilter } from "../lib/sidebarFilterCon
 import { UsageMeters } from "./UsageMeters.tsx";
 import "./Machines.css";
 import { useT } from "../lib/i18n.ts";
+import { useSettings } from "../lib/settings.ts";
 import { requestSettingsPage } from "../lib/paletteSettings.ts";
 import { useAnnouncedText } from "../lib/useAnnouncedText.ts";
 import { machineErrorText, saysHerdrAway } from "../lib/userError.ts";
@@ -36,6 +37,8 @@ export function MachineSidebar(props: Props) {
   const t = useT();
   const { canInstall, installed, install, help } = useInstallPrompt();
   const [installHelpOpen, setInstallHelpOpen] = useState(false);
+  // Settings → Sidebar layout: the folder tree lists each workspace's agents under it, so the Agents list stands aside
+  const { settings } = useSettings();
   const activity = props.activity;
   // the filter's query lives here and nowhere else: not in storage, not in the address, not past this
   // mount (lib/sidebarFilter.ts). The branch each roster row says comes up from the rosters, which read it.
@@ -89,7 +92,7 @@ export function MachineSidebar(props: Props) {
       {/* a PC kept out on this device is said, with the way to show it again */}
       {hiddenCount > 0 && <button type="button" className="machine-hidden-note" title={t("Choose the PCs this device shows")} onClick={() => { requestSettingsPage({ page: "remote", section: "sidebar-pcs" }); props.actions.openSettings(); }}>{hiddenCount === 1 ? t("1 PC hidden on this device") : t("{n} PCs hidden on this device", { n: hiddenCount })}</button>}
     </div>
-    <AgentSidebar machines={props.machines} selectedMachineId={props.selectedMachineId} selectedPaneId={props.selectedPaneId} stateWord={(machine) => t(STATE_WORD[machine.state])} watching={props.watching} onSelect={props.onSelect} />
+    {settings.sidebarLayout === "workspaces" && <AgentSidebar machines={props.machines} selectedMachineId={props.selectedMachineId} selectedPaneId={props.selectedPaneId} stateWord={(machine) => t(STATE_WORD[machine.state])} watching={props.watching} onSelect={props.onSelect} />}
     <footer className="sidebar-footer">
       {/* browsers without an install prompt (iOS, plain HTTP) get the steps instead */}
       {!installed && <button className="btn btn-ghost sidebar-footer-action" aria-expanded={canInstall ? undefined : installHelpOpen} onClick={() => { if (canInstall) void install(); else setInstallHelpOpen(!installHelpOpen); }}><Download aria-hidden="true" />{t("Install app")}</button>}

@@ -44,11 +44,11 @@ exactly (the safety net); drag stays smooth (a workspace within its folder, a fo
 | 1.2 `folderGroups()` in `src/lib/`: worktree groups into folders keyed by `worktree.repo_root`, else the first pane's cwd; name `repo_name` or the folder's basename; herdr's order kept | done | `workspaceOrder.ts` `folderGroups`, `workspaceFolder` + tests |
 | 1.3 Setting `sidebarLayout` ("folders" default, "workspaces") (default on, `sanitizeSettings`, Appearance row, i18n) | done | shared setting; excluded from telemetry and the legacy fixture like other new settings |
 | 1.4 Folder row: fold, name, count; fold state per PC in localStorage like the worktree fold | done | folded row carries its panes' rolled-up state | Folds share the worktree fold state under `folder:<dir>`; a workspace row drops its folder face in the tree.
-| 1.5 Pane rows under a workspace (agent mark, title, state, unread), reusing AgentSidebar's row parts; a workspace row folds its panes | todo | click selects that pane |
-| 1.6 Hide the Agents list while grouped; keep its features reachable (Activity order, filter matches panes) | todo | |
+| 1.5 Pane rows under a workspace (agent mark, title, state, unread), reusing AgentSidebar's row parts; a workspace row folds its panes | done | click selects that pane | `AgentRowBody` and `agentRowText` moved into `Sidebar.tsx` (shared with the Agents list, no import cycle); a workspace of 2+ panes lists them, one line each; menu: Mute alerts (agent pins not offered in the tree). Workspace rows do not fold their panes (the folder does).
+| 1.6 Hide the Agents list while grouped; keep its features reachable (Activity order, filter matches panes) | done | | `MachineSidebar` mounts `AgentSidebar` only for Workspaces; "Agents order" is inert in the tree.
 | 1.7 Drag: a workspace within its folder, a folder as a block (`placeBlock`/`workspaceMoves`) | todo | touch reorder too |
 | 1.8 Filter: matches workspaces and panes, opens folds it needs | todo | reuse `filterWorkspaceGroups` |
-| 1.9 Tests, browser check (desktop, 390px), changelog fragment | todo | |
+| 1.9 Tests, browser check (desktop, 390px), changelog fragment, DESIGN.md entry | todo | owner kept By folder as the code default: the browser scripts that read the old sidebar seed `sidebarLayout: "workspaces"`; advisor + vision e2e check before handing over |
 
 ## Step 2: Needs attention and "answered ago"
 
