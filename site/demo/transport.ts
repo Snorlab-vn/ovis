@@ -1354,6 +1354,22 @@ async function route(url: URL, method: string, init: RequestInit | undefined, in
     return json({ workspace_id: made.workspace_id, pane_id: made.pane_id, already_open: false, path: checkout.path, branch: checkout.branch, ...(agent ? { agent_started: made.agent_started } : {}) } satisfies WorktreeOpened);
   }
 
+  // Claude Code's edit and resend (server/claude-rewind.ts): the conversation goes back to before the
+  // message, and the new text takes its place
+  if (path === "/api/pane/rewind" && method === "POST") {
+    const body = await bodyOf(init, input);
+    const target = String(body["pane_id"] ?? "");
+    const chat = chats.get(keyOfPane.get(target) ?? "");
+    const firstOf = (value: string): string => value.trim().split("\n")[0]!.replace(/\s+/g, " ").trim();
+    const textOf = (turn: ConversationTurn): string => turn.parts.flatMap((part) => part.kind === "text" ? [part.text] : []).join("\n\n");
+    const matches = chat ? chat.turns.flatMap((turn, index) => turn.role === "user" && firstOf(textOf(turn)) === firstOf(String(body["message"] ?? "")) ? [index] : []) : [];
+    const at = matches[matches.length - 1 - Number(body["skip"] ?? 0)];
+    if (!chat || at === undefined) return error("message_not_found", "The message is not in Claude's rewind list", 409);
+    const original = chat.turns[at]!;
+    chat.turns = [...chat.turns.slice(0, at), { ...original, parts: [{ kind: "text", text: String(body["text"] ?? "") }] }];
+    conversationChanged(target);
+    return json({ ok: true });
+  }
   if (path === "/api/pane/conversation") {
     const key = keyOfPane.get(paneId);
     const chat = key ? chats.get(key) : undefined;

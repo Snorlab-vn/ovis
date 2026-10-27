@@ -8,6 +8,10 @@
  * Register and fixed terms follow ../i18n.ja.ts; a key another feature also uses goes there.
  */
 export const CHAT_JA: Record<string, string> = {
+  "Claude goes back to before this message and gets the new one in its place.": "Claude はこのメッセージの前に戻り、新しいメッセージを代わりに受け取ります。",
+  "Edit and send again": "編集して送り直す",
+  "Edit message": "メッセージを編集",
+  "Rewinding…": "巻き戻し中…",
   "Antigravity chat is unavailable. Open Terminal to see activity and tool calls.": "Antigravityのチャットを利用できません。ターミナルを開いて動作状況とツール呼び出しを確認してください。",
   "Chat read timed out.": "会話の読み込みがタイムアウトしました。",
   "Thinking…": "思考中…",

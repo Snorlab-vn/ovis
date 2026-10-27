@@ -1,0 +1,19 @@
+▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+   Rewind
+
+   Confirm you want to restore to the point before you sent this message:
+
+   │ Create a file named note.txt containing the word ECHO, using the Write tool. Then reply DONE.
+   │ (1m ago)
+
+   This message and everything after it will be removed.
+   The code will be restored -1 in note.txt.
+
+   ❯ 1. Restore code and conversation
+     2. Restore conversation
+     3. Restore code
+     4. Summarize from here
+   ↓ 5. Summarize up to here
+
+   ⚠ Restored files go back whole, losing later changes by anyone. Bash changes to other files are not undone.
+

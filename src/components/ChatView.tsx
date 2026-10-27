@@ -1,4 +1,5 @@
 import { createContext, memo, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentType } from "react";
+import { userErrorMessage } from "../lib/userError.ts";
 import { createPortal } from "react-dom";
 import {
   ArrowDown, BookOpen, Check, ChevronDown, ChevronRight, Circle, CircleAlert, CircleCheck, CircleDot, CircleQuestionMark, CircleSlash, CircleX, Copy, Layers, SquareTerminal, Target, Undo2,
@@ -922,8 +923,57 @@ interface TurnProps {
   /** a user turn that records a command sent from here: what became of it is drawn under the bubble */
   outcome?: CommandOutcome | null;
   outcomeActions?: OutcomeActions | null;
-  /** Claude Code, grok, agy: the message offers to open the terminal, where the agent's own rewind is run (lib/rewindAction.ts) */
+  /** grok, agy: the message offers to open the terminal, where the agent's own rewind is run (lib/rewindAction.ts) */
   onRewindInTerminal?: (() => void) | null;
+  /** Claude Code: the message is edited in place and sent again after a rewind to it; answers what went wrong, or null */
+  onEditResend?: ((turn: ConversationTurn, text: string) => Promise<string | null>) | null;
+}
+
+/**
+ * A user message being edited (Claude Code's "edit and resend"): Enter sends as the composer's does,
+ * Esc or Cancel leaves the message as it was and sends nothing.
+ */
+function EditMessage({ text, onSend, onCancel }: { text: string; onSend: (text: string) => Promise<string | null>; onCancel: () => void }) {
+  const t = useT();
+  const { settings } = useSettings();
+  const [value, setValue] = useState(text);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  // the box grows with its text, up to the CSS cap, so a long message is read whole while edited
+  const box = useRef<HTMLTextAreaElement>(null);
+  useLayoutEffect(() => {
+    const field = box.current;
+    if (field === null) return;
+    field.style.height = "auto";
+    field.style.height = `${field.scrollHeight + 2}px`;
+  }, [value]);
+  const send = (): void => {
+    if (pending || value.trim() === "") return;
+    setPending(true);
+    setError(null);
+    void onSend(value).then((failure) => {
+      setPending(false);
+      if (failure !== null) setError(failure);
+    });
+  };
+  return <form className="chat-edit" onSubmit={(event) => { event.preventDefault(); send(); }}>
+    <textarea ref={box} className="input chat-edit-box" aria-label={t("Edit message")} value={value} autoFocus rows={2} disabled={pending}
+      onFocus={(event) => event.currentTarget.setSelectionRange(event.currentTarget.value.length, event.currentTarget.value.length)}
+      onChange={(event) => setValue(event.target.value)}
+      onKeyDown={(event) => {
+        if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
+        if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); if (!pending) onCancel(); return; }
+        if (event.key !== "Enter") return;
+        const sends = settings.enterSends ? !event.shiftKey : event.metaKey || event.ctrlKey;
+        if (sends) { event.preventDefault(); send(); }
+      }} />
+    {error !== null && <p className="chat-inline-state chat-inline-error" role="alert">{error}</p>}
+    <div className="chat-edit-actions">
+      <span className="chat-edit-hint">{t("Claude goes back to before this message and gets the new one in its place.")}</span>
+      <button type="button" className="btn" disabled={pending} onClick={onCancel}>{t("Cancel")}</button>
+      <button type="submit" className="btn btn-primary" disabled={pending || value.trim() === ""} aria-busy={pending}>{pending ? t("Rewinding…") : t("Send")}</button>
+    </div>
+  </form>;
 }
 
 const TASK_RESULT_ICONS: Record<OmoTaskResult["status"], ComponentType<LucideProps>> = { completed: CircleCheck, failed: CircleX, cancelled: CircleSlash };
@@ -995,8 +1045,9 @@ function noticeLabel(t: ReturnType<typeof useT>, notice: Extract<ConversationPar
 }
 
 // a turn that did not change keeps its object across polls: skip re-rendering it
-const Turn = memo(function Turn({ paneId, turn, rowKey, live, waiting, showThinking, skills = null, userSkills = null, outcome = null, outcomeActions = null, onRewindInTerminal = null }: TurnProps) {
+const Turn = memo(function Turn({ paneId, turn, rowKey, live, waiting, showThinking, skills = null, userSkills = null, outcome = null, outcomeActions = null, onRewindInTerminal = null, onEditResend = null }: TurnProps) {
   const t = useT();
+  const [editing, setEditing] = useState(false);
   // under the turn, not in its meta row: that row fades out once the pointer and focus leave
   const [copyFailed, setCopyFailed] = useChatRowToggle("copy-failed", false);
   const copyError = copyFailed && <p className="chat-copy-error" role="alert">{t("Couldn't copy. Select the text and copy it manually.")}</p>;
@@ -1042,12 +1093,21 @@ const Turn = memo(function Turn({ paneId, turn, rowKey, live, waiting, showThink
       <UserImages paneId={paneId} parts={turn.parts} text={text} />
       {/* one row: with a mouse the time and copy sit beside the bubble, on touch under it */}
       <div className="chat-user-row">
-        {text.length > 0 && <UserMessage text={text} skills={userSkills} />}
-        <div className="chat-turn-meta">{time}{text.length > 0 && <CopyButton text={text} label={t("Copy message")} onResult={copied} />}
-          {text.length > 0 && onRewindInTerminal !== null && (
+        {editing && onEditResend !== null
+          ? <EditMessage text={text} onCancel={() => setEditing(false)} onSend={async (next) => {
+            const failure = await onEditResend(turn, next);
+            if (failure === null) setEditing(false);
+            return failure;
+          }} />
+          : text.length > 0 && <UserMessage text={text} skills={userSkills} />}
+        {!editing && <div className="chat-turn-meta">{time}{text.length > 0 && <CopyButton text={text} label={t("Copy message")} onResult={copied} />}
+          {text.length > 0 && onEditResend !== null && (
+            <button type="button" className="icon-button chat-copy chat-rewind" aria-label={t("Edit and send again")} title={t("Edit and send again")} onClick={() => setEditing(true)}><Undo2 aria-hidden="true" /></button>
+          )}
+          {text.length > 0 && onEditResend === null && onRewindInTerminal !== null && (
             <button type="button" className="icon-button chat-copy chat-rewind" aria-label={t("Rewind in terminal")} title={t("Rewind in terminal")} onClick={onRewindInTerminal}><Undo2 aria-hidden="true" /></button>
           )}
-        </div>
+        </div>}
       </div>
       {copyError}
       {outcome !== null && <OutcomeChip outcome={outcome} actions={outcomeActions} />}
@@ -1136,7 +1196,7 @@ function TerminalFallback({ paneId, visible }: { paneId: string; visible: boolea
 // the app re-renders on every pane-status and poll; an unchanged transcript sits those out
 export const ChatView = memo(function ChatView({ paneId, presentationKey, finishEpoch, finishId, active = true, visible: paneVisible = true, pageScroll, refreshKey, invalidationKey = 0, onConversationWatch, conversationPushes = false, onTerminalOutput, sentKey = 0, localSend, navigation, connected, ended, agent, agentStatus, onMetadata, onRead, greeted = false, onPrompt, onSuggestion, onRestored, promptRefreshKey = 0, pendingAnswer = null, onPendingAnswerDone, promptDock = null, onPromptAnswered, title = null, onOpenTerminal, covered = false, peek = null, onCommandScreenClosed, onOutcomes, interactive = false, onRewindInTerminal, cwd = null }: ChatViewProps) {
   const t = useT();
-  const { fetchPaneConversation, peekPaneConversation, fetchPanePromptState, fetchPaneTranscript } = useMachineApi();
+  const { fetchPaneConversation, peekPaneConversation, fetchPanePromptState, fetchPaneTranscript, rewindPane } = useMachineApi();
   const { settings } = useSettings();
   const machineId = useMachineId();
   const skillMatcher = useSkillMatcher(paneId, agent);
@@ -2076,15 +2136,31 @@ export const ChatView = memo(function ChatView({ paneId, presentationKey, finish
   // Nothing is typed: drafts and the agent's own rewind remain in the terminal.
   const offered = rewindOffer({ agent, interactive, connected, ended, conversation: state.source === "conversation" });
   const rewindInTerminal = offered === "terminal" ? onRewindInTerminal ?? null : null;
+  // Claude Code: back to before the message, with the edited text in its place (server/claude-rewind.ts). Claude's
+  // list names a message by its first line: later messages with the same one are passed by, as many as there are
+  const turnsRef = useRef(shownTurns); turnsRef.current = shownTurns;
+  const editResend = useCallback(async (turn: ConversationTurn, text: string): Promise<string | null> => {
+    const message = userText(turn);
+    const firstOf = (value: string): string => value.trim().split("\n")[0]!.replace(/\s+/g, " ").trim();
+    const later = turnsRef.current.slice(turnsRef.current.indexOf(turn) + 1);
+    const skip = later.filter((other) => other.role === "user" && firstOf(userText(other)) === firstOf(message)).length;
+    try {
+      await rewindPane(paneId, message, skip, text);
+      return null;
+    } catch (reason) {
+      return userErrorMessage(reason).message;
+    }
+  }, [paneId, rewindPane]);
+  const editResendOffered = offered === "edit" ? editResend : null;
   const renderTurn = useCallback((row: ChatRow) => {
     if (row.turn === null) return <OutcomeRow outcome={row.outcome} actions={outcomeActions} skills={skillMatcher} />;
     const { turn } = row;
     const live = isLiveWorkTurn(turn, row.index === shownTurns.length - 1, workStatus, finishedBeforeSend);
     return <RenderBoundary resetKey={turnRevision(turn, true)} fallback={() => <p className="chat-inline-state chat-inline-error" data-pane-content-error>{t("This message can't be shown here. The terminal has it.")}</p>}>
       <Turn paneId={paneId} turn={turn} rowKey={row.key} live={live} waiting={isWaitingWorkTurn(live, agentStatus)} showThinking={settings.showThinking} skills={skillMatcher} userSkills={skillMatcher} outcome={row.outcome} outcomeActions={outcomeActions}
-        onRewindInTerminal={turn.role === "user" ? rewindInTerminal : null} />
+        onRewindInTerminal={turn.role === "user" ? rewindInTerminal : null} onEditResend={turn.role === "user" ? editResendOffered : null} />
     </RenderBoundary>;
-  }, [shownTurns.length, workStatus, finishedBeforeSend, t, paneId, agentStatus, settings.showThinking, skillMatcher, outcomeActions, rewindInTerminal]);
+  }, [shownTurns.length, workStatus, finishedBeforeSend, t, paneId, agentStatus, settings.showThinking, skillMatcher, outcomeActions, rewindInTerminal, editResendOffered]);
   // displayPaneTitle falls back to the pane id for a pane with nothing else to call it
   const shownTitle = title?.trim() ?? "";
   const logLabel = shownTitle !== "" && shownTitle !== paneId ? t("conversation of {pane}", { pane: shownTitle }) : t("Conversation");

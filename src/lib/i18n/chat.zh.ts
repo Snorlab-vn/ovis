@@ -8,6 +8,10 @@
  * Register and fixed terms follow ../i18n.zh.ts; a key another feature also uses goes there.
  */
 export const CHAT_ZH: Record<string, string> = {
+  "Claude goes back to before this message and gets the new one in its place.": "Claude 会回到这条消息之前，并用新消息替代它。",
+  "Edit and send again": "编辑后重新发送",
+  "Edit message": "编辑消息",
+  "Rewinding…": "正在回退…",
   "Antigravity chat is unavailable. Open Terminal to see activity and tool calls.": "Antigravity 聊天暂不可用。请打开终端查看运行状态和工具调用。",
   "Chat read timed out.": "读取对话超时。",
   "Thinking…": "思考中…",

@@ -123,6 +123,39 @@
   gap: var(--space-1);
 }
 
+/* a user message being edited to send again (Claude Code's rewind): the bubble's place and width,
+   its text in a box, the way back beside the send */
+.chat-edit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: min(100%, 40rem);
+}
+
+.chat-edit-box {
+  width: 100%;
+  min-height: calc(var(--control-h) * 2);
+  max-height: 50vh;
+  font-size: var(--chat-fs-body);
+  line-height: var(--lh-prose);
+  resize: vertical;
+}
+
+.chat-edit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.chat-edit-hint {
+  flex: 1 1 12rem;
+  min-width: 0;
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+}
+
 /* the user's turn is a raised neutral card, not a colored one: amber stays reserved for
    selection and the send action, so a long thread does not turn into a wall of color.
    --bubble-border is the palette's call: no edge where the fill alone parts it from the page */

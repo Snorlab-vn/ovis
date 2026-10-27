@@ -1054,6 +1054,11 @@ Alert rows of the table above from the `--droplet-*` roles in `src/styles.css`.
   next-prompts mod's proposals (`useNextPrompts`, server/next-prompts.ts) as Tasky does, in the quick
   replies' chip row and look, above them; a chip's tooltip is its whole text, a click sends it as it is.
   None while the pane works, for another agent, or without the mod's patch.
+- **Edit and resend** (`.chat-edit`, ChatView.tsx): on a Claude Code message the ↩ turns the bubble into
+  a box with its text (it grows with it, to half the view), a line on what happens, Cancel and Send.
+  Enter sends as the composer's does; Esc or Cancel puts the bubble back and sends nothing. Send has
+  the server drive Claude's own /rewind to that message and send the new text (server/claude-rewind.ts);
+  a refusal stays under the box. grok and agy keep "Rewind in terminal".
 - **How long ago** (`.agent-ago`, `--fs-xs`, `--text-dim`, tabular digits): an agent row, and a
   workspace row of one pane, says when its state last changed in one unit (`0s`, `3m`, `2h`, `4d`,
   lib/ago.ts), from the bridge's `status_since` (server/finishes.ts), on one shared clock ticking every

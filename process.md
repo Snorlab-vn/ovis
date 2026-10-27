@@ -113,3 +113,29 @@ Not scheduled; see the plan's backlog list.
 | B8 Paste `.gitignore` | done upstream | `server/paste.ts` preparePasteDirectory |
 | B9 Settings restart rows | later | Ovis has no restart rows yet |
 
+
+## Edit and resend a Claude message (owner, 2026-10-28)
+
+The ↩ under a user message in the chat edits that message in place; Enter rewinds Claude to it and
+sends the new text, Cancel/Esc does nothing. Measured by hand on Claude Code 2.1.311 in the isolated
+`ovis-test` herdr (screens kept under server/fixtures/claude-rewind/).
+
+Claude's own sequence, which the server drives and checks at every step:
+1. `/rewind` + Enter opens the picker (never Esc Esc: that would cancel a working turn). The picker lists
+   user messages, a multi-line one by its first line and `…`, the cursor `❯` on `(current)` at the bottom.
+2. Up until the `❯` row is the message (prefix match of its first line; `skip` later messages with the
+   same first line), Enter. At the top with no match: Esc until the panel is gone, 409.
+3. Confirm screen: options vary (`1. Restore conversation` without code changes; `1. Restore code and
+   conversation`, `2. Restore conversation`, ... with them). Owner: "as Claude's rewind does" = the first
+   `Restore ... conversation` option, read by its digit from the screen.
+4. Claude puts the message back in its input box: clear it with [ctrl+k, ctrl+u, Backspace] until empty
+   (a wrapped or multi-line box takes several rounds), then send the new text as every chat send does
+   (agentPrompt + closeMention), inside the pane's send queue (`serialize`).
+
+| Task | Status | Notes |
+|---|---|---|
+| R1 Probe the TUI: picker, multi-line row, confirm with and without code changes, restore, clear | done | 2.1.311 |
+| R2 `POST /api/pane/rewind {pane_id, message, skip, text}`: preconditions (Claude, not working or blocked, empty box, no rewind panel), each step read and checked, Esc out on anything unexpected | done | server/claude-rewind.ts server/claude-rewind.ts, in the pane's send queue; Esc out on anything unexpected |
+| R3 Parsers and route tests on the captured screens (happy path, not found, draft, working, code-changes digit) | done | server/claude-rewind.test.ts: parsers on 2.1.311 and 2.1.304 fixtures; route on a scripted Claude terminal (happy path, skip, not found, working, draft, box that will not empty) |
+| R4 Chat: ↩ on a Claude user message edits it inline (Enter per Settings, Esc/Cancel restores); grok/agy keep "Rewind in terminal" | done | ChatView EditMessage: grows with its text, Enter per Settings, Esc/Cancel sends nothing; grok/agy keep the terminal hint |
+| R5 Demo route; browser check 1200/390; one end-to-end run of the real route on `ovis-test` | done | demo route; browser 1200/390: Esc leaves the chat as it was, Enter replaces the message and drops what followed; end to end on ovis-test with real Claude (haiku): BRAVO->CHARLIE 1.0 s, a two-line edit 0.9 s, an unknown message refused with the dialog closed |

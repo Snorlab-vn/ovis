@@ -3,9 +3,10 @@ import { rewindOffer, type RewindContext } from "./rewindAction.ts";
 
 const ready: RewindContext = { agent: "claude", interactive: true, connected: true, ended: false, conversation: true };
 
-describe("a user message's terminal rewind action", () => {
-  it("opens only the terminal for every supported agent", () => {
-    for (const agent of ["claude", "grok", "agy"]) expect(rewindOffer({ ...ready, agent })).toBe("terminal");
+describe("a user message's rewind action", () => {
+  it("edits a Claude Code message in the chat, and opens the terminal for grok and agy", () => {
+    expect(rewindOffer(ready)).toBe("edit");
+    for (const agent of ["grok", "agy"]) expect(rewindOffer({ ...ready, agent })).toBe("terminal");
   });
 
   it("offers nothing when the connection or native conversation is unavailable", () => {

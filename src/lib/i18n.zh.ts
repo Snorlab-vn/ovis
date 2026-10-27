@@ -71,6 +71,7 @@ const BASE: Record<string, string> = {
   "Close dialog": "关闭对话框",
   "This PC": "本机",
   "Open SSH to {name}": "打开到 {name} 的 SSH",
+  "Send": "发送",
   "New workspace": "新建工作区",
   "Previous pane": "上一个窗格",
   "Next pane": "下一个窗格",

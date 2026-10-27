@@ -29,6 +29,7 @@ export function useMachineApi() {
     fetchPaneBackgroundAgent: (pane: string, agent: string) => api.fetchPaneBackgroundAgent(pane, agent, id),
     fetchPanePlan: (pane: string) => api.fetchPanePlan(pane, id),
     closePane: (pane: string) => api.closePane(pane, id),
+    rewindPane: (pane: string, message: string, skip: number, text: string) => api.rewindPane(pane, message, skip, text, id),
     focusPane: (pane: string) => api.focusPane(pane, id),
     closeWorkspace: (workspace: string, closeGroup = false) => api.closeWorkspace(workspace, id, closeGroup),
     createWorktree: (request: CreateWorktreeRequest) => api.createWorktree(request, id),

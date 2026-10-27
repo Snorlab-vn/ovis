@@ -69,6 +69,7 @@ const BASE: Record<string, string> = {
   "Close dialog": "ダイアログを閉じる",
   "This PC": "この PC",
   "Open SSH to {name}": "{name} への SSH を開く",
+  "Send": "送信",
   "New workspace": "新しいワークスペース",
   "Previous pane": "前のペイン",
   "Next pane": "次のペイン",

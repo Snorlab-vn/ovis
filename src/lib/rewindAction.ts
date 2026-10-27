@@ -1,8 +1,11 @@
-/** Supported agents hand rewind to their own terminal; this action sends no input. */
-export type RewindAction = "terminal" | null;
+/**
+ * Claude Code's message is edited in the chat and sent again through its own rewind, which the server
+ * drives (server/claude-rewind.ts); grok and agy hand rewind to their terminal, which sends no input.
+ */
+export type RewindAction = "edit" | "terminal" | null;
 
 export function rewindAction(agent: string | null): RewindAction {
-  return agent === "claude" || agent === "grok" || agent === "agy" ? "terminal" : null;
+  return agent === "claude" ? "edit" : agent === "grok" || agent === "agy" ? "terminal" : null;
 }
 
 /** The pane and connection must still be available, with a native conversation. */

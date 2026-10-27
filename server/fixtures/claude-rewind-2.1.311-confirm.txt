@@ -1,0 +1,16 @@
+✻ Cogitated for 8s · done 11:51 PM
+▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+   Rewind
+
+   Confirm you want to restore to the point before you sent this message:
+
+   │ Reply with just the word ALPHA
+   │ (1m ago)
+
+   This message and everything after it will be removed.
+   The code will be unchanged.
+
+   ❯ 1. Restore conversation
+     2. Summarize from here
+     3. Summarize up to here
+     4. Never mind

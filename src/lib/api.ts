@@ -562,6 +562,14 @@ export async function fetchPaneSelection(paneId: string, anchor: PaneTextPoint, 
  * The sidebar updates on its own when the server's session-changed broadcast lands;
  * a failure (e.g. the pane already gone) throws ApiError and the 5s poll reconciles.
  */
+/**
+ * POST /api/pane/rewind (server/claude-rewind.ts): Claude Code goes back to before `message` (the
+ * `skip`-th later one with the same first line) and gets `text` in its place.
+ */
+export async function rewindPane(paneId: string, message: string, skip: number, text: string, machineId = "local"): Promise<void> {
+  await sendJson(machinePath(machineId, "pane/rewind"), "POST", { pane_id: paneId, message, skip, text });
+}
+
 export async function closePane(paneId: string, machineId = "local"): Promise<void> {
   await closeAtOnce(machineId, "pane", paneId, () => sendJson(machinePath(machineId, "pane/close"), "POST", { pane_id: paneId }));
 }

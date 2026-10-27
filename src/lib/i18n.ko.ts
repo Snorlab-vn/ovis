@@ -67,6 +67,7 @@ const BASE: Record<string, string> = {
   "Close dialog": "창 닫기",
   "This PC": "이 PC",
   "Open SSH to {name}": "{name}에 SSH 열기",
+  "Send": "보내기",
   "New workspace": "새 워크스페이스",
   "Previous pane": "이전 패널",
   "Next pane": "다음 패널",
