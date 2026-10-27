@@ -18,7 +18,7 @@ import { bindScope, cameThroughProxy, decideAccess, forwardingHeaders, isLoopbac
 import { DeviceStore, handleDeviceRequest, newStreamKey, sameBrowser, streamCookie, streamKeys, type DeviceMatch } from "./devices.ts";
 import { handlePreferencesRequest, PreferenceStore } from "./preferences.ts";
 import { handleSeenRequest, SeenStore } from "./seen.ts";
-import { remoteAccess, TailnetIdentitySource } from "./tailscale.ts";
+import { readTailscaleStatus, remoteAccess, TailnetIdentitySource } from "./tailscale.ts";
 import { badRequest, errorResponse, jsonResponse, setRequestRoute } from "./http.ts";
 import { requestOrigin, serveStatic } from "./static.ts";
 import { compressResponse } from "./compress.ts";
@@ -26,6 +26,7 @@ import { handleTasksRequest } from "./tasks-routes.ts";
 import { handlePlanRequest } from "./plan-routes.ts";
 import { ShellAgentLocator } from "./shell-agent.ts";
 import { handleAgentsRequest } from "./agents-routes.ts";
+import { handleConnectionsRequest } from "./connections.ts";
 import { forgetPageMedia } from "./file-view.ts";
 import { handleFileRequest } from "./file-routes.ts";
 import { BACKGROUND_AGENT_PATH, handleBackgroundAgentRequest, type BackgroundAgentDeps } from "./background-agent.ts";
@@ -129,6 +130,8 @@ export function createServer(
     tailscaleServeOnly?: boolean;
     /** the tailnet identity behind the access check; unset, the tailscale CLI says. Tests pass one with their own status reader. */
     tailnet?: TailnetIdentitySource;
+    /** `tailscale status --json` for the Connections page; unset, the tailscale CLI says. Tests pass their own. */
+    tailscaleStatus?: () => Promise<string | null>;
     /** Native Codex store; defaults to CODEX_HOME. Tests use an isolated store. */
     codexHome?: string;
     grokHome?: string;
@@ -361,7 +364,9 @@ export function createServer(
       const sessionHistory = /^\/api\/(?:machines\/[^/]+\/)?sessions\/history$/.test(pathname);
       // an agent's commands in a folder are read from that folder's command files, as a directory listing and a file read are
       const agentCommands = /^\/api\/(?:machines\/[^/]+\/)?agent\/commands$/.test(pathname);
-      if (readOnly && (fileRead || directoryListing || repositoryDiff || sessionHistory || agentCommands || mutating && !ownPreferences)) {
+      // the tailnet's devices are where a driving device can open SSH; a watching one has no use for the map
+      const tailnetPeers = /^\/api\/(?:machines\/[^/]+\/)?connections\//.test(pathname);
+      if (readOnly && (fileRead || directoryListing || repositoryDiff || sessionHistory || agentCommands || tailnetPeers || mutating && !ownPreferences)) {
         setRequestRoute("watch-refusal");
         return jsonResponse({ error: { code: "read_only", message: "this device can only watch" } }, 403);
       }
@@ -551,6 +556,9 @@ export function createServer(
 
       const agentsResponse = await handleAgentsRequest(request, pathname, shellAgents);
       if (agentsResponse) return agentsResponse;
+
+      const connectionsResponse = await handleConnectionsRequest(request, pathname, options.tailscaleStatus ?? readTailscaleStatus);
+      if (connectionsResponse) return connectionsResponse;
 
       const integrationsResponse = await handleIntegrationsRequest(request, pathname);
       if (integrationsResponse) return integrationsResponse;

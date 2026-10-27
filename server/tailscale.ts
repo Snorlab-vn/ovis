@@ -195,7 +195,8 @@ export interface TailnetIdentity {
 
 const OWNER_TTL_MS = 5 * 60_000;
 
-const cliStatus = async (): Promise<string | null> => {
+/** `tailscale status --json` as the CLI prints it; null without Tailscale or when it fails. */
+export const readTailscaleStatus = async (): Promise<string | null> => {
   const binary = tailscaleBinary();
   return binary === null ? null : run(binary, ["status", "--json"]);
 };
@@ -213,7 +214,7 @@ export class TailnetIdentitySource {
   /** the read in flight, so concurrent grants share one bounded read */
   private reading: Promise<void> | null = null;
 
-  constructor(private readonly readStatus: () => Promise<string | null> = cliStatus) {}
+  constructor(private readonly readStatus: () => Promise<string | null> = readTailscaleStatus) {}
 
   /**
    * A read that failed, or one whose status leaves the sole-login question open, keeps what the
