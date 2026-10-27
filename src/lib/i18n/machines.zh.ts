@@ -6,7 +6,6 @@
  */
 export const MACHINES_ZH: Record<string, string> = {
   "Expand {name}": "展开 {name}",
-  "Open SSH to {name}": "打开到 {name} 的 SSH",
   "Tailnet": "Tailnet 设备",
   "Collapse {name}": "折叠 {name}",
   "Disconnected": "已断开连接",

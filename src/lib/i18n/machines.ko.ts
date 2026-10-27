@@ -6,7 +6,6 @@
  */
 export const MACHINES_KO: Record<string, string> = {
   "Expand {name}": "{name} 펼치기",
-  "Open SSH to {name}": "{name}에 SSH 열기",
   "Tailnet": "Tailnet 기기",
   "Collapse {name}": "{name} 접기",
   "Disconnected": "연결 끊김",

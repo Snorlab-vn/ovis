@@ -6,7 +6,6 @@
  */
 export const MACHINES_JA: Record<string, string> = {
   "Expand {name}": "{name} を展開",
-  "Open SSH to {name}": "{name} への SSH を開く",
   "Tailnet": "Tailnet のデバイス",
   "Collapse {name}": "{name} を折りたたむ",
   "Disconnected": "切断されました",

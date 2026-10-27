@@ -90,7 +90,7 @@ export function ConnectionsDialog({ onOpened, onClose }: ConnectionsDialogProps)
               </span>
               <input className="input connections-user" value={users[peer.dns] ?? ""} placeholder={t("user")} aria-label={t("SSH user for {name}", { name: peer.name })} autoComplete="off" autoCapitalize="off" spellCheck={false}
                 onChange={(event) => setUsers({ ...users, [peer.dns]: event.target.value })} onKeyDown={(event) => { if (event.key === "Enter") open(peer); }} />
-              <button type="button" className="btn connections-open" disabled={opening !== null} aria-busy={opening === peer.dns} onClick={() => open(peer)}><SquareTerminal aria-hidden="true" />{t("Open SSH")}</button>
+              <button type="button" className="icon-button connections-open" disabled={opening !== null} aria-busy={opening === peer.dns} aria-label={t("Open SSH to {name}", { name: peer.name })} title={t("Open SSH to {name}", { name: peer.name })} onClick={() => open(peer)}><SquareTerminal aria-hidden="true" /></button>
               <button type="button" className="icon-button" aria-pressed={isPinned} aria-label={t(isPinned ? "Hide {name} from the sidebar" : "Show {name} in the sidebar", { name: peer.name })} title={t(isPinned ? "Hide {name} from the sidebar" : "Show {name} in the sidebar", { name: peer.name })} onClick={() => togglePin(peer.dns)}>
                 {isPinned ? <PinOff aria-hidden="true" /> : <Pin aria-hidden="true" />}
               </button>
