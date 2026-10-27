@@ -264,6 +264,15 @@
   width: var(--side-box);
 }
 
+/* how long ago the state changed (Tasky's rows): small and quiet, its digits one width so it does not jitter */
+.agent-ago {
+  margin-left: var(--space-1);
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 .agent-item.is-offline { opacity: 0.5; }
 
 .agent-empty {

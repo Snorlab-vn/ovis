@@ -2,7 +2,8 @@ import { describe, expect, it } from "bun:test";
 import type { Machine, MachineState } from "../../shared/machines.ts";
 import type { AgentStatus, HerdrPane, SessionSnapshot } from "../../shared/protocol.ts";
 import fixture from "../../site/demo/fixtures/machines.json";
-import { agentRoster } from "./agentRoster.ts";
+import { agentRoster, attentionRows } from "./agentRoster.ts";
+import { paneMuteKey } from "./paneMutes.ts";
 import { sidebarPinKey } from "./sidebarPins.ts";
 
 const template = fixture.machines[0]!.snapshot as SessionSnapshot;
@@ -28,5 +29,14 @@ describe("agent roster", () => {
     expect(split.pinned.map(key)).toEqual(["remote/d", "local/c"]);
     // blocked first, then the latest change, within each PC; the PCs keep their order
     expect(split.rest.map(key)).toEqual(["local/b", "local/a", "remote/e"]);
+  });
+
+  it("lists what waits on the user: asking first, then finished, newest change first, muted and away PCs left out", () => {
+    const machines = [machine("local", "connected", [["a", "done"], ["b", "blocked"], ["c", "working"], ["d", "done"], ["m", "blocked"]]), machine("away", "disconnected", [["e", "blocked"]])];
+    const since: Record<string, number> = { a: 100, d: 300, b: 50 };
+    for (const pane of machines[0]!.snapshot!.panes) if (since[pane.pane_id] !== undefined) pane.status_since = since[pane.pane_id];
+    const rows = agentRoster(machines, { byActivity: false, seqs: () => new Map(), pinned: [] }).rest;
+    const picked = attentionRows(rows, ({ entry }) => entry.pane.agent_status, [paneMuteKey("local", "m")]);
+    expect(picked.map(({ machine, entry }) => `${machine.id}/${entry.pane.pane_id}`)).toEqual(["local/b", "local/d", "local/a"]);
   });
 });

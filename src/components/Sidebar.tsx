@@ -30,6 +30,7 @@ import { filterWorkspaceGroups, machineFilter } from "../lib/sidebarFilter.ts";
 import { useSidebarFilter } from "../lib/sidebarFilterContext.ts";
 import { useSettings } from "../lib/settings.ts";
 import { newSessionLaunch } from "../lib/newSession.ts";
+import { formatAgo, useNow } from "../lib/ago.ts";
 import { useMediaQuery } from "../lib/useMediaQuery.ts";
 import { useAnnouncedText } from "../lib/useAnnouncedText.ts";
 import { useWorktreeBranches } from "../lib/useWorktreeBranches.ts";
@@ -165,13 +166,21 @@ interface AgentRowBodyProps {
   note?: string | null;
   /** its alerts are off for everyone (lib/paneMutes.ts): said beside the state, as a word for a screen reader */
   muted: boolean;
+  /** when the pane's status last changed (the bridge's `status_since`), said as how long ago beside the state */
+  since?: number;
+}
+
+/** how long ago the status changed, on the shared clock (lib/ago.ts) */
+function StatusAgo({ since }: { since: number }) {
+  const now = useNow();
+  return <time className="agent-ago" dateTime={new Date(since).toISOString()} title={new Date(since).toLocaleString()}>{formatAgo(now - since)}</time>;
 }
 
 /**
  * One agent in a list: the coding agent's mark, what it is working on, who and where it is, what
  * its plugins report, and how it is doing.
  */
-export function AgentRowBody({ mark, markKind, title, name, context, tokens, backgroundTasks, plan, status, note = null, muted }: AgentRowBodyProps) {
+export function AgentRowBody({ mark, markKind, title, name, context, tokens, backgroundTasks, plan, status, note = null, muted, since }: AgentRowBodyProps) {
   const t = useT();
   return <>
     <span className="sidebar-mark" aria-hidden="true">{mark !== null ? <AgentMark agent={mark} size={18} /> : <Terminal />}</span>
@@ -192,6 +201,7 @@ export function AgentRowBody({ mark, markKind, title, name, context, tokens, bac
     </span>
     <span className="agent-row-status">
       {note !== null && <span className="sidebar-filter-note">{note}</span>}<BackgroundBadge count={backgroundTasks} /><PlanBadge plan={plan} />
+      {since !== undefined && <StatusAgo since={since} />}
       {muted && <span className="agent-muted" title={t("Alerts muted")} data-testid="alerts-muted"><BellOff aria-hidden="true" /><span className="visually-hidden">{t("Alerts muted")}</span></span>}
     </span>
     {/* drawn at the row's right edge, after its ⋯, as a workspace row's state is (AgentSidebar.css) */}
@@ -907,6 +917,8 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions, watching = 
             {foldedCount > 0 && <span className="workspace-fold-count" aria-hidden="true">+{foldedCount}</span>}
             {filterNote}
           </span>}
+          {/* a workspace of one pane has no pane row under it: the row says how long ago that pane's state changed */}
+          {online && panes.length === 1 && panes[0]!.status_since !== undefined && <StatusAgo since={panes[0]!.status_since} />}
           <span className="sidebar-pane-meta">
             <span className="visually-hidden">{markName(pane)}</span>
             {online && pane.restore_error ? <RestoreErrorBadge reason={pane.restore_error} /> : <StatusBadge compact status={online ? rollupStatus(statusPanes.map((candidate) => activity.status(machineId, candidate))) : undefined} />}
@@ -951,7 +963,7 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions, watching = 
           event.dataTransfer.setData(PANE_DRAG_TYPE, paneDragData({ machineId, paneId: pane.pane_id }));
         }}>
         <AgentRowBody mark={text.mark} markKind={text.markKind} title={text.title} name={text.name} context={text.context} tokens={text.tokens}
-          backgroundTasks={online ? entry?.pane.background_tasks : 0} plan={online ? entry?.pane.plan : undefined} status={online ? activity.status(machineId, pane) : undefined} muted={isMuted} />
+          backgroundTasks={online ? entry?.pane.background_tasks : 0} plan={online ? entry?.pane.plan : undefined} status={online ? activity.status(machineId, pane) : undefined} muted={isMuted} since={online ? entry?.pane.status_since : undefined} />
       </button>
       <div className="agent-actions">
         <button type="button" className="sidebar-row-action row-menu-toggle" aria-label={t("More for {title}", { title: text.title })} aria-haspopup="menu" aria-expanded={menuOpen} onClick={(event) => toggleMenu(event.currentTarget)}>

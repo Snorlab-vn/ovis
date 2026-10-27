@@ -137,3 +137,14 @@ it("recognizes a replaced socket file and Windows marker incarnation, never just
     expect(finishHerdrIdentity(join(dir, "missing"), "linux")).toBeNull();
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+it("says when a pane's status changed, only once it has seen it change", () => {
+  const finishes = new Finishes(() => "daemon-a");
+  expect(finishes.status("p", "working").status_since).toBeUndefined();
+  expect(finishes.status("p", "working").status_since).toBeUndefined();
+  const changed = finishes.status("p", "done").status_since;
+  expect(changed).toBeNumber();
+  expect(finishes.status("p", "done").status_since).toBe(changed!);
+  finishes.ended("p");
+  expect(finishes.status("p", "idle").status_since).toBeNumber();
+});

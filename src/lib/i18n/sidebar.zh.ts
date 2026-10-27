@@ -4,6 +4,7 @@
  * Register and fixed terms follow ../i18n.zh.ts; a key another feature also uses goes there.
  */
 export const SIDEBAR_ZH: Record<string, string> = {
+  "Needs attention": "需要处理",
   "Pin agent": "固定 Agent",
   "Unpin agent": "取消固定 Agent",
   "Mute alerts": "静音提醒",

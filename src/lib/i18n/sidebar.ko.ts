@@ -4,6 +4,7 @@
  * Register and fixed terms follow ../i18n.ko.ts; a key another feature also uses goes there.
  */
 export const SIDEBAR_KO: Record<string, string> = {
+  "Needs attention": "주의 필요",
   "Pin agent": "에이전트 고정",
   "Unpin agent": "에이전트 고정 해제",
   "Mute alerts": "알림 끄기",

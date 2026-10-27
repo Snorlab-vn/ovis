@@ -90,7 +90,8 @@ for (const machine of machines) if (machine.snapshot) {
   machine.snapshot.finish_epoch = crypto.randomUUID();
   // each PC's one fictional herdr, the same on every load: what the demo stores stays its panes'
   machine.snapshot.herdr_lifetime = `demo-${machine.id}`;
-  for (const pane of machine.snapshot.panes) pane.finish_id = pane.agent_status === "done" ? 1 : 0;
+  // each pane's state changed a little while before the page opened, a minute apart down the roster
+  machine.snapshot.panes.forEach((pane, index) => { pane.finish_id = pane.agent_status === "done" ? 1 : 0; pane.status_since = Date.now() - (index + 1) * 60_000; });
 }
 /** pane id -> fixture key ("api", "web", …) */
 const keyOfPane = new Map<string, string>(Object.entries(panesFixture as Record<string, string>).map(([key, paneId]) => [paneId, key]));
@@ -383,13 +384,14 @@ function setStatus(paneId: string, status: AgentStatus): void {
   const pane = paneOf(paneId);
   if (!pane) return;
   if (status === "done" && pane.agent_status !== "done") pane.finish_id = (pane.finish_id ?? 0) + 1;
+  if (status !== pane.agent_status) pane.status_since = Date.now();
   pane.agent_status = status;
   // as herdr does, every state change bumps the session's counter on the pane's agent
   const agent = snapshot().agents.find((entry) => entry.pane_id === paneId);
   if (agent) Object.assign(agent, { agent_status: status, state_change_seq: nextStateSeq() });
   for (const workspace of snapshot().workspaces) if (workspace.workspace_id === pane.workspace_id) workspace.agent_status = status;
   for (const tab of snapshot().tabs) if (tab.tab_id === pane.tab_id) tab.agent_status = status;
-  const message: ServerMessage = { type: "pane-status", pane_id: paneId, agent_status: status, finish_id: pane.finish_id, finish_epoch: snapshot().finish_epoch };
+  const message: ServerMessage = { type: "pane-status", pane_id: paneId, agent_status: status, finish_id: pane.finish_id, finish_epoch: snapshot().finish_epoch, ...(pane.status_since === undefined ? {} : { status_since: pane.status_since }) };
   emitSse({ type: "machine-message", machine_id: local.id, message });
   for (const socket of sockets) socket.push(message);
 }

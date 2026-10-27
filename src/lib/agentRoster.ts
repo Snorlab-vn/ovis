@@ -7,6 +7,7 @@ import type { Machine } from "../../shared/machines.ts";
 import { sidebarAgents, type SidebarAgent } from "./sidebarAgents.ts";
 import { activityOrder } from "./sidebarOrder.ts";
 import { sidebarPinKey, splitPinnedRows } from "./sidebarPins.ts";
+import { paneMuteKey } from "./paneMutes.ts";
 
 export interface AgentRow { machine: Machine; entry: SidebarAgent }
 
@@ -26,4 +27,21 @@ export function agentRoster(machines: readonly Machine[], options: AgentRosterOp
     return (options.byActivity ? activityOrder(agents, (entry) => entry.pane, options.seqs(machine.id)) : agents).map((entry): AgentRow => ({ machine, entry }));
   });
   return splitPinnedRows(rows, options.pinned, ({ machine, entry }) => sidebarPinKey(machine.id, entry.pane.pane_id));
+}
+
+/**
+ * Needs attention (Tasky's list): the rows that wait on the user, an agent asking first, then one
+ * that finished and was not opened since, each newest change first. A muted pane is left out, as
+ * its alerts are. `status` is the state the rows show (lib/sidebarActivity.tsx), a seen finish idle.
+ */
+export function attentionRows(rows: readonly AgentRow[], status: (row: AgentRow) => string | undefined, muted: readonly string[] | null): AgentRow[] {
+  const rank = (row: AgentRow): number => {
+    const shown = status(row);
+    return shown === "blocked" ? 0 : shown === "done" ? 1 : -1;
+  };
+  return rows
+    .filter((row) => row.machine.state === "connected" && rank(row) >= 0 && !muted?.includes(paneMuteKey(row.machine.id, row.entry.pane.pane_id)))
+    .map((row, index) => ({ row, index, rank: rank(row), since: row.entry.pane.status_since ?? 0 }))
+    .sort((a, b) => a.rank - b.rank || b.since - a.since || a.index - b.index)
+    .map((entry) => entry.row);
 }

@@ -58,12 +58,12 @@ exactly (the safety net); drag stays smooth (a workspace within its folder, a fo
 
 | Task | Status | Notes |
 |---|---|---|
-| 2.1 Find where agent state and last answer time live (snapshot, agent list) | todo | |
-| 2.2 Selection: waiting for input, or finished and unread | todo | pure, unit tests |
-| 2.3 "Needs attention" list on top of the sidebar | todo | |
-| 2.4 Compact "answered ago" on agent rows (0s, 3m, 2h) | todo | reuse an existing time formatter |
+| 2.1 Find where agent state and last answer time live (snapshot, agent list) | done | herdr gives no time, only a counter: the bridge stamps `status_since` when it sees a pane's state change (server/finishes.ts), sent on the snapshot and every pane-status frame; absent until it has seen one change since it started |
+| 2.2 Selection: waiting for input, or finished and unread | done | pure, unit tests `attentionRows` (lib/agentRoster.ts): blocked, then unread done, newest first; muted panes and away PCs left out; unit test |
+| 2.3 "Needs attention" list on top of the sidebar | done | `NeedsAttention` above the PCs; hidden while empty or filtering; a row opens its pane |
+| 2.4 Compact "answered ago" on agent rows (0s, 3m, 2h) | done | reuse an existing time formatter `formatAgo` + one shared 15s clock (lib/ago.ts); on agent rows and one-pane workspace rows |
 | 2.4b Unread mark on agent rows the user has not opened since they finished | todo | reuse `sidebarActivity` / `seenFinishes` (already shared across browsers); also a count on a folded folder or PC |
-| 2.5 Tests, browser check, changelog fragment | todo | |
+| 2.5 Tests, browser check, changelog fragment | done | tests pass (9 AgentSidebar DOM failures pre-exist on main); demo checked at 1200px and 390px drawer, no overflow, no console errors; changelog + DESIGN.md |
 
 ## Step 3: Connections (tailnet devices, one-click SSH)
 

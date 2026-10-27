@@ -1033,6 +1033,19 @@ Alert rows of the table above from the `--droplet-*` roles in `src/styles.css`.
   (`AgentRowBody`), its ⋯ offering **Mute alerts**; the selection fills the pane's row only. A
   workspace's drag and Alt+↑/↓ stay in its folder; a folder's row drags its workspaces as one block.
   **Agents list** (Auto, On, Off) shows the separate list; Auto leaves it out of the folder tree.
+  A folder's row has a `+` (shown on hover or focus, always on touch) listing a terminal and herdr's
+  agents with their marks: the pick starts at once in a new workspace in that folder, with the New
+  workspace dialog's defaults. The PC row's fold-all (copy-minus / copy-plus) folds every folder
+  while one is open, and opens them all once all are folded.
+- **Needs attention** (`NeedsAttention`, AgentSidebar.tsx), as Tasky heads its sidebar: above the PCs,
+  the agents of every connected PC that ask something (blocked) and then those that finished and were
+  not opened since, newest change first; a muted pane is left out (`attentionRows`, lib/agentRoster.ts).
+  Rows are the Agents list's (`AgentRowBody`); a row opens its pane. Nothing is drawn while it is empty
+  or the filter is on.
+- **How long ago** (`.agent-ago`, `--fs-xs`, `--text-dim`, tabular digits): an agent row, and a
+  workspace row of one pane, says when its state last changed in one unit (`0s`, `3m`, `2h`, `4d`,
+  lib/ago.ts), from the bridge's `status_since` (server/finishes.ts), on one shared clock ticking every
+  15s. A bridge that has not seen the pane's state change since it started says nothing.
 - No top bar. The sidebar opens with the plan panel (when Settings puts it there), the PC workspace groups and a separate **Agents** list spanning the connected PCs. A workspace starts from the `+` on its PC's header, or from the **New workspace**
   button in the dashed **No workspaces yet** box of an empty PC. **Add PC** lives in Settings →
   Remote PCs and in the command palette. Search, as in finding anything and acting on it (panes by

@@ -30,7 +30,8 @@ export function herdrLifetime(identity: string): string {
 export class Finishes {
   private generation = crypto.randomUUID();
   private identity: string | null;
-  private readonly panes = new Map<string, { status: AgentStatus; id: number }>();
+  /** `since`: when this bridge saw the status change; absent while it has only seen the status it first read */
+  private readonly panes = new Map<string, { status: AgentStatus; id: number; since?: number }>();
 
   constructor(private readonly herdr: () => string | null = finishHerdrIdentity) {
     this.identity = herdr();
@@ -51,16 +52,18 @@ export class Finishes {
     return this.generation;
   }
 
-  status(paneId: string, status: AgentStatus): { finish_epoch: string; finish_id: number } {
+  status(paneId: string, status: AgentStatus): { finish_epoch: string; finish_id: number; status_since?: number } {
     const finish_epoch = this.epoch;
-    return { finish_epoch, finish_id: this.observe(paneId, status) };
+    return { finish_epoch, ...this.observe(paneId, status) };
   }
 
-  private observe(paneId: string, status: AgentStatus): number {
+  // ponytail: a bridge restart forgets every `since`; a pane shows none until its status next changes
+  private observe(paneId: string, status: AgentStatus): { finish_id: number; status_since?: number } {
     const before = this.panes.get(paneId);
     const finish_id = (before?.id ?? 0) + (status === "done" && before?.status !== "done" ? 1 : 0);
-    this.panes.set(paneId, { status, id: finish_id });
-    return finish_id;
+    const since = before === undefined ? undefined : before.status === status ? before.since : Date.now();
+    this.panes.set(paneId, { status, id: finish_id, ...(since === undefined ? {} : { since }) });
+    return { finish_id, ...(since === undefined ? {} : { status_since: since }) };
   }
 
   snapshot(snapshot: SessionSnapshot, completions: CompletionTracker): SessionSnapshot {
@@ -72,7 +75,7 @@ export class Finishes {
       if (!live.has(paneId) && completions.current(paneId) === undefined) this.ended(paneId);
     }
     return { ...snapshot, finish_epoch, panes: snapshot.panes.map((pane) => ({
-      ...pane, finish_id: this.observe(pane.pane_id, pane.agent_status),
+      ...pane, ...this.observe(pane.pane_id, pane.agent_status),
     })) };
   }
 
@@ -87,6 +90,6 @@ export class Finishes {
   /** Keep the counter if herdr reuses an ended pane's ID within this epoch. */
   ended(paneId: string): void {
     const before = this.panes.get(paneId);
-    if (before) this.panes.set(paneId, { ...before, status: "unknown" });
+    if (before) this.panes.set(paneId, { status: "unknown", id: before.id });
   }
 }

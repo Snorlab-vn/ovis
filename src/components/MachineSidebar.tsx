@@ -9,7 +9,7 @@ import { keepDismissed, noticeKey, readDismissed, waitingMachines, writeDismisse
 import type { AppActions } from "../lib/actions.ts";
 import { useInstallPrompt } from "../lib/install.ts";
 import { Sidebar } from "./Sidebar.tsx";
-import { AgentSidebar } from "./AgentSidebar.tsx";
+import { AgentSidebar, NeedsAttention } from "./AgentSidebar.tsx";
 import { SidebarActivityProvider, type SidebarActivity } from "../lib/sidebarActivity.tsx";
 import { filterSuggestions, machineFilter, sidebarFilter, type SidebarBranchLabels } from "../lib/sidebarFilter.ts";
 import { SidebarFilterProvider, useSidebarFilter } from "../lib/sidebarFilterContext.ts";
@@ -88,6 +88,7 @@ export function MachineSidebar(props: Props) {
     </div>
     <div className="machine-list" aria-label={t("PCs and workspaces")}>
       <p className={noMatchWords === null ? "visually-hidden" : "tree-state sidebar-filter-empty"} role="status">{noMatchWords}</p>
+      <NeedsAttention machines={props.machines} selectedMachineId={props.selectedMachineId} selectedPaneId={props.selectedPaneId} onSelect={props.onSelect} />
       {props.machines.map((machine) => <MachineGroup key={machine.id} {...props} machine={machine} />)}
       <p className={loadingWords === null ? "visually-hidden" : "tree-state"} role="status">{loadingWords}</p>
       {/* a PC kept out on this device is said, with the way to show it again */}

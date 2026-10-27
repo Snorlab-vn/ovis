@@ -6,7 +6,7 @@ import { paneStorageId } from "../../shared/machines.ts";
 import { currentAgentRowTokens, subscribeAgentRowTokens } from "../lib/agentRowTokens.ts";
 import { useT } from "../lib/i18n.ts";
 import { useAnnouncedText } from "../lib/useAnnouncedText.ts";
-import { agentRoster, type AgentRow } from "../lib/agentRoster.ts";
+import { agentRoster, attentionRows, type AgentRow } from "../lib/agentRoster.ts";
 import { currentPaneMutes, paneMuteKey, prunePaneMutes, setPaneMutes, subscribePaneMutes, togglePaneMute } from "../lib/paneMutes.ts";
 import { useSettings } from "../lib/settings.ts";
 import { useSidebarActivity } from "../lib/sidebarActivity.tsx";
@@ -144,7 +144,7 @@ export function AgentSidebar({ machines, selectedMachineId, selectedPaneId, stat
           event.dataTransfer.setData(PANE_DRAG_TYPE, paneDragData({ machineId: machine.id, paneId: pane.pane_id }));
         }}>
         {/* a saved roster's state is not news: a PC that is away says nothing about its agents */}
-        <AgentRowBody mark={mark} markKind={markKind} title={title} name={name} context={context} tokens={tokens} backgroundTasks={online ? pane.background_tasks : 0} plan={online ? pane.plan : undefined} status={online ? activity.status(machine.id, pane) : undefined} note={filterContext && selected ? t("Selected") : null} muted={muted?.includes(paneMuteKey(machine.id, pane.pane_id)) === true} />
+        <AgentRowBody mark={mark} markKind={markKind} title={title} name={name} context={context} tokens={tokens} backgroundTasks={online ? pane.background_tasks : 0} plan={online ? pane.plan : undefined} status={online ? activity.status(machine.id, pane) : undefined} note={filterContext && selected ? t("Selected") : null} muted={muted?.includes(paneMuteKey(machine.id, pane.pane_id)) === true} since={online ? pane.status_since : undefined} />
       </button>
       <div className="agent-actions">
         <button type="button" className="sidebar-row-action row-menu-toggle" aria-label={t("More for {title}", { title })} aria-haspopup="menu" aria-expanded={menuOpen} onClick={(event) => toggleMenu(event.currentTarget)}>
@@ -199,5 +199,36 @@ export function AgentSidebar({ machines, selectedMachineId, selectedPaneId, stat
         run: () => toggleMute(menuRow.machine.id, menuRow.entry.pane.pane_id),
       }]),
     ]} />}
+  </section>;
+}
+
+/**
+ * Needs attention, over every PC's workspaces (Tasky's list): the agents asking something, then the
+ * ones that finished and were not opened since (lib/agentRoster.ts attentionRows). A row opens its
+ * pane, which takes a finish off the list. Nothing is drawn while it is empty or the filter is on.
+ */
+export function NeedsAttention({ machines, selectedMachineId, selectedPaneId, onSelect }: Pick<AgentSidebarProps, "machines" | "selectedMachineId" | "selectedPaneId" | "onSelect">) {
+  const t = useT();
+  const muted = useSyncExternalStore(subscribePaneMutes, currentPaneMutes, currentPaneMutes);
+  const rowTokens = useSyncExternalStore(subscribeAgentRowTokens, currentAgentRowTokens, currentAgentRowTokens);
+  const activity = useSidebarActivity();
+  const { filter } = useSidebarFilter();
+  const rows = useMemo(() => attentionRows(agentRoster(machines, { byActivity: false, seqs: activity.seqs, pinned: [] }).rest,
+    ({ machine, entry }) => activity.status(machine.id, entry.pane), muted), [machines, activity, muted]);
+  if (rows.length === 0 || filter.active) return null;
+  return <section className="agents-sidebar needs-attention" aria-label={t("Needs attention")}>
+    <p className="sidebar-section-label"><span>{t("Needs attention")}</span><span className="agent-section-count">{rows.length}</span></p>
+    <ul className="agent-list">{rows.map(({ machine, entry }) => {
+      const { pane } = entry;
+      const selected = machine.id === selectedMachineId && pane.pane_id === selectedPaneId;
+      const text = agentRowText(entry, { online: true, tabs: machine.snapshot?.tabs.filter((tab) => tab.workspace_id === entry.workspace.workspace_id) ?? [],
+        machineName: machines.length > 1 ? machine.name : null, workspaceLabel: entry.workspace.label, rowTokens, t });
+      return <li className={`agent-item${selected ? " is-selected" : ""}`} key={paneStorageId(machine.id, pane.pane_id)} data-machine={machine.id} data-pane={pane.pane_id}>
+        <button type="button" className="agent-select agent-row" aria-current={selected ? "true" : undefined} title={[text.title, text.context, pane.cwd].filter(Boolean).join("\n")} onClick={() => onSelect(machine.id, pane.pane_id)}>
+          <AgentRowBody mark={text.mark} markKind={text.markKind} title={text.title} name={text.name} context={text.context} tokens={text.tokens}
+            backgroundTasks={pane.background_tasks} plan={pane.plan} status={activity.status(machine.id, pane)} muted={false} since={pane.status_since} />
+        </button>
+      </li>;
+    })}</ul>
   </section>;
 }
