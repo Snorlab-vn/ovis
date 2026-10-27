@@ -827,7 +827,8 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions, watching = 
             actions.selectPane(pane.pane_id);
           }}
         >
-          {rowMark(pane, workspace.worktree?.is_linked_worktree === true)}
+          {/* a workspace that lists its panes under it leaves their marks to them; its name keeps the column */}
+          {byFolder && withPanes && panes.length > 1 ? <span className="sidebar-mark" aria-hidden="true" /> : rowMark(pane, workspace.worktree?.is_linked_worktree === true)}
           {editingWorkspace ? <input
             className="input workspace-rename-input"
             aria-label={t("Workspace name")}
