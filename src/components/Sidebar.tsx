@@ -918,7 +918,8 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions, watching = 
           {online && panes.length === 1 && panes[0]!.status_since !== undefined && <StatusAgo since={panes[0]!.status_since} />}
           <span className="sidebar-pane-meta">
             <span className="visually-hidden">{markName(pane)}</span>
-            {online && pane.restore_error ? <RestoreErrorBadge reason={pane.restore_error} /> : <StatusBadge compact status={online ? rollupStatus(statusPanes.map((candidate) => activity.status(machineId, candidate))) : undefined} />}
+            {/* a workspace that lists its panes leaves their states to their rows */}
+            {online && pane.restore_error ? <RestoreErrorBadge reason={pane.restore_error} /> : !(byFolder && withPanes && panes.length > 1) && <StatusBadge compact status={online ? rollupStatus(statusPanes.map((candidate) => activity.status(machineId, candidate))) : undefined} />}
           </span>
         </div>
         <div className="workspace-actions">
