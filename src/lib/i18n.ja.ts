@@ -50,6 +50,7 @@ const BASE: Record<string, string> = {
   "Switch chat / terminal": "チャット / ターミナルを切り替え",
   "Focus pane input": "ペインの入力欄にフォーカス",
   "Toggle sidebar": "サイドバーの切り替え",
+  "The workspace opened, but {agent} did not start. Check that it is installed on the PC, then open it again.": "ワークスペースは開きましたが、{agent} は起動しませんでした。PC にインストールされているか確認してから、もう一度開いてください。",
   "New workspace": "新しいワークスペース",
   "Previous pane": "前のペイン",
   "Next pane": "次のペイン",

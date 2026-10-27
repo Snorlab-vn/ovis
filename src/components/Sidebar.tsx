@@ -5,7 +5,7 @@ import "./Sidebar.css";
 // the folder tree draws agent rows under their workspace, styled as the Agents list's
 import "./AgentSidebar.css";
 
-import type { AgentStatus, PaneInfo, PlanSummary, SessionSnapshot, TabInfo, WorkspaceInfo } from "../../shared/protocol.ts";
+import type { AgentKind, AgentStatus, PaneInfo, PlanSummary, SessionSnapshot, TabInfo, WorkspaceInfo } from "../../shared/protocol.ts";
 import { paneTokenValues, type AgentRowTokens } from "../../shared/pane-tokens.ts";
 import { paneTitle } from "../../shared/notify-policy.ts";
 import { MAX_LABEL_CHARS } from "../../shared/labels.ts";
@@ -29,6 +29,7 @@ import { currentPaneMutes, paneMuteKey, setPaneMutes, subscribePaneMutes, toggle
 import { filterWorkspaceGroups, machineFilter } from "../lib/sidebarFilter.ts";
 import { useSidebarFilter } from "../lib/sidebarFilterContext.ts";
 import { useSettings } from "../lib/settings.ts";
+import { newSessionLaunch } from "../lib/newSession.ts";
 import { useMediaQuery } from "../lib/useMediaQuery.ts";
 import { useAnnouncedText } from "../lib/useAnnouncedText.ts";
 import { useWorktreeBranches } from "../lib/useWorktreeBranches.ts";
@@ -274,7 +275,7 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions, watching = 
   const twoLine = settings.sidebarRows === "two";
   const machineId = useMachineId();
   const activity = useSidebarActivity();
-  const { closeWorkspace, listWorktrees, moveWorkspace, removeWorktree, renameWorkspace } = useMachineApi();
+  const { closeWorkspace, createWorkspace, fetchAgentKinds, listWorktrees, moveWorkspace, removeWorktree, renameWorkspace } = useMachineApi();
   // the row menu's Earlier sessions needs the PC's bridge to list them (lib/useSessionHistoryOffered.ts)
   const historyOffered = useSessionHistoryOffered(online);
   // the roster's wait is a live region in the list from its first render, clipped while empty (never
@@ -316,6 +317,10 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions, watching = 
   const filtering = filtered !== null;
   useEffect(() => { if (!filtering) setFilterFolds((current) => current.size === 0 ? current : new Map()); }, [filtering]);
   const [menu, setMenu] = useState<MenuState | null>(null);
+  /** a folder's + menu: a shell or an agent, started at once in a new workspace in the folder */
+  const [folderMenu, setFolderMenu] = useState<{ anchor: HTMLElement; name: string; cwd: string; agents: AgentKind[] } | null>(null);
+  /** the folder a + is starting a workspace in, while herdr answers (up to 60s with an agent) */
+  const [creatingIn, setCreatingIn] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
   const [worktreeDialog, setWorktreeDialog] = useState<{ mode: WorktreeDialogMode; workspace: WorkspaceInfo } | null>(null);
   const [editingWorkspaceId, setEditingWorkspaceId] = useState<string | null>(null);
@@ -453,6 +458,33 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions, watching = 
   }, [snapshot, selectedPaneId, branches]);
 
   const noteError = (message: string, workspaceId?: string, detail: string | null = null): void => setInlineError({ message, workspaceId, detail });
+
+  const openFolderMenu = (anchor: HTMLElement, name: string, cwd: string): void => {
+    void fetchAgentKinds().then(
+      (agents) => setFolderMenu({ anchor, name, cwd, agents }),
+      // herdr's agents cannot be listed: a shell is still offered
+      () => setFolderMenu({ anchor, name, cwd, agents: [] }),
+    );
+  };
+
+  /** the folder's + : a workspace in it at once, no dialog, as the New workspace dialog would start it with its fields empty */
+  const createInFolder = async (cwd: string, agent: AgentKind | null): Promise<void> => {
+    const launch = newSessionLaunch({ agent: agent?.kind ?? "", model: "", effort: "", prompt: "" }, settings);
+    if ("fault" in launch || creatingIn !== null) return;
+    setCreatingIn(cwd);
+    try {
+      const created = await createWorkspace({ cwd, label: null, agent: launch.agent });
+      if (agent && !created.agent_started) noteError(t("The workspace opened, but {agent} did not start. Check that it is installed on the PC, then open it again.", { agent: agent.label }), undefined, created.error?.message ?? null);
+      else if (agent) actions.agentStarted(machineId, created.pane_id);
+      actions.selectPane(created.pane_id);
+      actions.refresh();
+    } catch (reason: unknown) {
+      const error = userErrorMessage(reason);
+      noteError(error.message, undefined, error.detail);
+    } finally {
+      setCreatingIn(null);
+    }
+  };
 
   /** the pane a workspace's row shows and opens, among the panes the row stands for */
   const currentPane = (workspace: WorkspaceInfo, panes: PaneInfo[]): PaneInfo => {
@@ -956,6 +988,8 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions, watching = 
     const open = folded ? workspaces.find((workspace) => panes.some((pane) => pane.pane_id === selectedPaneId && pane.workspace_id === workspace.workspace_id)) : undefined;
     const rows = folded ? (open ? [renderWorkspaceRow(open, [], false, undefined, false)] : []) : folder.groups.map(renderGroup);
     const contentsId = `${rosterId}-folder-${encodeURIComponent(folder.key)}`;
+    // the folder's path; a folder named after one workspace (no folder known) starts in its first pane's
+    const cwd = folder.key.startsWith("workspace:") ? panes[0]?.cwd ?? null : folder.key;
     // a folder's row drags its workspaces as one block, before or after another folder's, in herdr's order
     const folderIds = (key: string): string[] => visibleFolders.find((candidate) => candidate.key === key)?.groups.flatMap(groupIds) ?? [];
     const dropFolder = (event: DragEvent<HTMLElement>): void => {
@@ -984,6 +1018,9 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions, watching = 
         </button>
         {/* folded, the folder stands for its rows: a pane that waits or has finished must not hide behind it */}
         {folded && <span className="sidebar-pane-meta"><StatusBadge compact status={online ? rollupStatus(panes.map((pane) => activity.status(machineId, pane))) : undefined} /></span>}
+        {!watching && cwd !== null && <button type="button" className="sidebar-row-action sidebar-folder-new" aria-label={t("New workspace")} title={t("New workspace")} aria-haspopup="menu"
+          disabled={!online || creatingIn !== null} aria-busy={creatingIn === cwd}
+          onClick={(event) => openFolderMenu(event.currentTarget, folder.name, cwd)}><Plus aria-hidden="true" /></button>}
       </div>
       <ul className="workspace-list sidebar-folder-contents" id={contentsId} hidden={rows.length === 0}>{rows}</ul>
     </li>;
@@ -1011,6 +1048,10 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions, watching = 
         </>
       </nav>
       {menu && <RowMenu anchor={menu.anchor} point={menu.point} restoreFocusTo={menu.previousFocus} title={menu.title} subtitle={menu.place} items={menuItems(menu)} onClose={closeMenu} />}
+      {folderMenu && <RowMenu anchor={folderMenu.anchor} title={t("New workspace")} subtitle={folderMenu.name} onClose={() => setFolderMenu(null)} items={[
+        { id: "shell", label: t("Terminal"), icon: Terminal, run: () => void createInFolder(folderMenu.cwd, null) },
+        ...folderMenu.agents.map((agent): RowMenuItem => ({ id: agent.kind, label: agent.label, icon: Terminal, glyph: <AgentMark agent={agent.kind} size={16} />, run: () => void createInFolder(folderMenu.cwd, agent) })),
+      ]} />}
       {confirm && <ConfirmDialog title={confirm.title} body={confirm.body} confirmLabel={confirm.action ?? t("Close")} onConfirm={confirm.run} escalation={confirm.escalation} onClose={() => setConfirm(null)} />}
       {worktreeDialog && <WorktreeDialog mode={worktreeDialog.mode} workspace={worktreeDialog.workspace} onClose={() => setWorktreeDialog(null)} onOpened={(opened) => {
         rememberOpened(opened);

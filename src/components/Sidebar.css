@@ -399,6 +399,11 @@ button.sidebar-section-label:focus-visible { outline-offset: calc(var(--ring-off
   .sidebar-folder-header:hover .sidebar-folder-toggle { color: var(--text); }
 }
 
+/* the folder's +: shown on a pointer's hover or a focus, as the PC row's +; always on touch */
+@media (hover: hover) {
+  .sidebar-folder-header:not(:hover, :focus-within) .sidebar-folder-new:not([aria-busy="true"]) { visibility: hidden; }
+}
+
 .sidebar-folder-contents > .workspace-group > .workspace-header { padding-left: var(--side-box); }
 .sidebar-folder-contents .worktree-children .workspace-header { padding-left: calc(var(--side-box) * 2); }
 
