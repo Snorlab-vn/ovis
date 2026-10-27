@@ -43,7 +43,7 @@ exactly (the safety net); drag stays smooth (a workspace within its folder, a fo
 | 1.1b Analyse the owner's mockup and agree the design | done | option B, mock trees in the chat |
 | 1.2 `folderGroups()` in `src/lib/`: worktree groups into folders keyed by `worktree.repo_root`, else the first pane's cwd; name `repo_name` or the folder's basename; herdr's order kept | done | `workspaceOrder.ts` `folderGroups`, `workspaceFolder` + tests |
 | 1.3 Setting `sidebarLayout` ("folders" default, "workspaces") (default on, `sanitizeSettings`, Appearance row, i18n) | done | shared setting; excluded from telemetry and the legacy fixture like other new settings |
-| 1.4 Folder row: fold, name, count; fold state per PC in localStorage like the worktree fold | todo | folded row carries its panes' rolled-up state |
+| 1.4 Folder row: fold, name, count; fold state per PC in localStorage like the worktree fold | done | folded row carries its panes' rolled-up state | Folds share the worktree fold state under `folder:<dir>`; a workspace row drops its folder face in the tree.
 | 1.5 Pane rows under a workspace (agent mark, title, state, unread), reusing AgentSidebar's row parts; a workspace row folds its panes | todo | click selects that pane |
 | 1.6 Hide the Agents list while grouped; keep its features reachable (Activity order, filter matches panes) | todo | |
 | 1.7 Drag: a workspace within its folder, a folder as a block (`placeBlock`/`workspaceMoves`) | todo | touch reorder too |

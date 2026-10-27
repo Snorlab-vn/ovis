@@ -348,6 +348,65 @@ button.sidebar-section-label:focus-visible { outline-offset: calc(var(--ring-off
   height: var(--hairline);
 }
 
+/* The folder tree (Settings → Sidebar layout): a folder's row leads with its fold and an open or
+   closed folder, as the Codex app's project heads its threads, and its workspaces sit one indent
+   under it; a worktree under one of them sits one indent further, on its own branch. */
+.sidebar-folder-header {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  min-height: var(--side-row);
+  padding-right: var(--side-box);
+  border-radius: var(--radius-md);
+}
+
+.sidebar-folder-toggle {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  align-self: stretch;
+  gap: var(--space-1);
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-regular);
+  text-align: left;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.sidebar-folder-toggle svg {
+  flex: none;
+  width: var(--icon-size);
+  height: var(--icon-size);
+}
+
+.sidebar-folder-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-folder-toggle:focus-visible { outline-offset: calc(var(--ring-offset) * -1); }
+
+@media (hover: hover) {
+  .sidebar-folder-header:hover { background: var(--side-hover); }
+  .sidebar-folder-header:hover .sidebar-folder-toggle { color: var(--text); }
+}
+
+.sidebar-folder-contents > .workspace-group > .workspace-header { padding-left: var(--side-box); }
+.sidebar-folder-contents .worktree-children .workspace-header { padding-left: calc(var(--side-box) * 2); }
+
+.sidebar-folder-contents .worktree-children .workspace-group > .workspace-header::before,
+.sidebar-folder-contents .worktree-children .workspace-group > .workspace-header::after {
+  left: calc(var(--side-box) * 1.5);
+}
+
 /* The face that leads a workspace row is also the fold when linked worktrees sit under it: under a
    pointer or keyboard focus it turns to the folder that says so, open while the worktrees show and
    closed while they are folded; on touch, where nothing hovers, the folder always shows. */
