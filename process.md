@@ -52,6 +52,7 @@ exactly (the safety net); drag stays smooth (a workspace within its folder, a fo
 | 1.6b Setting "Agents list": Auto (shown with Workspaces, hidden in By folder), On, Off | done | owner's request; shared setting |
 | 1.6c Lighter tree: Claude's mark without its tile (its orange asterisk), a workspace that lists its panes leaves its mark to them | done | owner's request (screenshot) |
 | 1.10 A `+` on each folder row: menu Terminal and each agent (Claude Code, Codex, Cursor, OpenCode, pi, ...), starting a workspace in that folder (`createWorkspace({ cwd, agent })`) | done (claude2 open) | Claude's `--dangerously-skip-permissions` = Settings > Chat > New agents: bypassPermissions (existing); `claude2` (owner's alias: `CLAUDE_CONFIG_DIR=~/.claude2` + pool env) needs a launch with its own env: find how herdr can start it. Done: + on hover (always on touch), menu = Terminal + herdr's agents with their marks, starts at once with the New workspace defaults (launch mode settings), selects the new pane; a failed start says so under the list. Checked on the demo: hover, menu, Claude Code start, new pane selected, no console errors |
+| 1.11 Fold-all on the PC row (folder tree): collapses every folder, or opens them all once all are folded; saved like a folder's own fold | done | owner's request (screenshot); checked on the demo: both ways, kept across a reload |
 
 ## Step 2: Needs attention and "answered ago"
 

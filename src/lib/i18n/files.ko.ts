@@ -113,7 +113,5 @@ export const FILES_KO: Record<string, string> = {
   "Copy path": "경로 복사",
   "Path copied": "경로를 복사했습니다",
   "Path": "경로",
-  "Collapse all folders": "모든 폴더 접기",
-  "Expand all folders": "모든 폴더 펼치기",
   "Browse folders in the palette": "팔레트에서 폴더 탐색",
 };

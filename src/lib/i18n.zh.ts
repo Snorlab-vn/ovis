@@ -53,6 +53,8 @@ const BASE: Record<string, string> = {
   "Focus pane input": "聚焦面板输入框",
   "Toggle sidebar": "切换侧边栏",
   "The workspace opened, but {agent} did not start. Check that it is installed on the PC, then open it again.": "工作区已打开，但 {agent} 未能启动。请确认 PC 上已安装它，然后再次打开。",
+  "Collapse all folders": "折叠所有文件夹",
+  "Expand all folders": "展开所有文件夹",
   "New workspace": "新建工作区",
   "Previous pane": "上一个窗格",
   "Next pane": "下一个窗格",

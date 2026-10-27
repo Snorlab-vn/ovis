@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { ChevronDown, ChevronRight, Download, Monitor, Plus, Settings, SlidersHorizontal, X } from "lucide-react";
+import { ChevronDown, ChevronRight, CopyMinus, CopyPlus, Download, Monitor, Plus, Settings, SlidersHorizontal, X } from "lucide-react";
 import type { Machine, MachineState, MachineUpdate, RemoteOvis } from "../../shared/machines.ts";
 import { copyText } from "../lib/clipboard.ts";
 import { MachineContext } from "../lib/machineContext.tsx";
@@ -108,7 +108,11 @@ export function MachineSidebar(props: Props) {
 
 function MachineGroup({ machine, ...props }: Props & { machine: Machine }) {
   const t = useT();
+  const { settings } = useSettings();
   const [collapsed, setCollapsed] = useState(() => { try { return localStorage.getItem(`ovis:pc-collapsed:${machine.id}`) === "1"; } catch { return false; } });
+  // the folder tree's fold-all: the roster says whether a folder is open, and folds or opens them all on a request
+  const [foldersOpen, setFoldersOpen] = useState(false);
+  const [foldAll, setFoldAll] = useState<{ collapse: boolean; seq: number } | null>(null);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(machine.name);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -173,6 +177,7 @@ function MachineGroup({ machine, ...props }: Props & { machine: Machine }) {
         <span className={`machine-dot is-${machine.action_required === "setup" ? "setup" : machine.state}`} title={machine.action_required === "setup" ? t("Setup needed") : t(STATE_WORD[machine.state])} aria-hidden="true" />
       </div>
       {machine.kind === "ssh" && <button className="sidebar-row-action machine-manage" aria-label={t("Manage {name}", { name: machine.name })} title={t("Manage PC")} aria-expanded={editing} onClick={() => { setEditing(!editing); setConfirmDelete(false); }}><SlidersHorizontal aria-hidden="true" /></button>}
+      {settings.sidebarLayout === "folders" && !folded && <button className="sidebar-row-action machine-fold-all" aria-label={t(foldersOpen ? "Collapse all folders" : "Expand all folders")} title={t(foldersOpen ? "Collapse all folders" : "Expand all folders")} onClick={() => setFoldAll({ collapse: foldersOpen, seq: (foldAll?.seq ?? 0) + 1 })}>{foldersOpen ? <CopyMinus aria-hidden="true" /> : <CopyPlus aria-hidden="true" />}</button>}
       {/* the fold over this PC's workspaces sits beside the + */}
       <button className="sidebar-row-action machine-toggle" aria-expanded={!folded} aria-label={folded ? t("Expand {name}", { name: machine.name }) : t("Collapse {name}", { name: machine.name })} title={folded ? t("Expand {name}", { name: machine.name }) : t("Collapse {name}", { name: machine.name })} onClick={toggle}>{folded ? <ChevronRight aria-hidden="true" /> : <ChevronDown aria-hidden="true" />}</button>
       <button className="sidebar-row-action machine-new" disabled={!online} aria-label={t("New workspace on {name}", { name: machine.name })} title={t("New workspace")} onClick={() => props.onNew(machine.id)}><Plus aria-hidden="true" /></button>
@@ -198,7 +203,7 @@ function MachineGroup({ machine, ...props }: Props & { machine: Machine }) {
     {error && <p className="machine-error" role="alert">{error}</p>}
     {/* under a filter a folded PC's roster is mounted, hidden, so the branches it reads can be found */}
     {(!folded || filtered !== null) && <div className={online ? "" : "machine-offline"} inert={!online} hidden={folded}>
-      {!online && !machine.snapshot ? <p className="tree-state machine-empty" role="status">{t("No saved sessions")}</p> : <MachineContext.Provider value={machine.id}><Sidebar snapshot={machine.snapshot} online={online} selectedPaneId={props.selectedMachineId === machine.id ? props.selectedPaneId : null} actions={actions} watching={props.watching} /></MachineContext.Provider>}
+      {!online && !machine.snapshot ? <p className="tree-state machine-empty" role="status">{t("No saved sessions")}</p> : <MachineContext.Provider value={machine.id}><Sidebar snapshot={machine.snapshot} online={online} selectedPaneId={props.selectedMachineId === machine.id ? props.selectedPaneId : null} actions={actions} watching={props.watching} foldAll={foldAll} onFoldersOpen={setFoldersOpen} /></MachineContext.Provider>}
     </div>}
   </section>;
 }

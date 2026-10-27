@@ -49,6 +49,8 @@ const BASE: Record<string, string> = {
   "Focus pane input": "패널 입력창으로 이동",
   "Toggle sidebar": "사이드바 토글",
   "The workspace opened, but {agent} did not start. Check that it is installed on the PC, then open it again.": "워크스페이스는 열렸지만 {agent} 에이전트는 시작되지 않았습니다. PC에 설치되어 있는지 확인한 뒤 다시 여세요.",
+  "Collapse all folders": "모든 폴더 접기",
+  "Expand all folders": "모든 폴더 펼치기",
   "New workspace": "새 워크스페이스",
   "Previous pane": "이전 패널",
   "Next pane": "다음 패널",

@@ -113,7 +113,5 @@ export const FILES_ZH: Record<string, string> = {
   "Copy path": "复制路径",
   "Path copied": "已复制路径",
   "Path": "路径",
-  "Collapse all folders": "折叠所有文件夹",
-  "Expand all folders": "展开所有文件夹",
   "Browse folders in the palette": "在命令面板中浏览文件夹",
 };

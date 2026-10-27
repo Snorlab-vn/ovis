@@ -113,7 +113,5 @@ export const FILES_JA: Record<string, string> = {
   "Copy path": "パスをコピー",
   "Path copied": "パスをコピーしました",
   "Path": "パス",
-  "Collapse all folders": "すべてのフォルダを折りたたむ",
-  "Expand all folders": "すべてのフォルダを展開",
   "Browse folders in the palette": "パレットでフォルダを参照",
 };

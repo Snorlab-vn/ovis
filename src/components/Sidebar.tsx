@@ -263,13 +263,17 @@ export interface SidebarProps {
   actions: AppActions;
   /** this device only watches: the row's menu offers no earlier sessions, which the server refuses it */
   watching?: boolean;
+  /** the PC row's fold-all, in the folder tree: each new request folds or opens every folder */
+  foldAll?: { collapse: boolean; seq: number } | null;
+  /** whether a folder of the tree is open, for the PC row's fold-all to say what it does */
+  onFoldersOpen?: (open: boolean) => void;
 }
 
 /**
  * Spaces follow herdr's workspace roster. A workspace opens its current pane; tabs and split
  * panes are navigated through the tab strip, while Agents is an independent API-backed list.
  */
-export function Sidebar({ snapshot, online, selectedPaneId, actions, watching = false }: SidebarProps) {
+export function Sidebar({ snapshot, online, selectedPaneId, actions, watching = false, foldAll = null, onFoldersOpen }: SidebarProps) {
   const t = useT();
   const { settings } = useSettings();
   const twoLine = settings.sidebarRows === "two";
@@ -423,6 +427,13 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions, watching = 
   // and herdr's order are read from the whole roster as before, and a move waits until the filter is cleared
   const visibleGroups = useMemo(() => filtered === null ? shownGroups : { pinned: filterWorkspaceGroups(shownGroups.pinned, filtered.workspaces), rest: filterWorkspaceGroups(shownGroups.rest, filtered.workspaces) }, [shownGroups, filtered]);
   const visibleFolders = useMemo(() => byFolder ? folderGroups(visibleGroups.rest, (group) => folderOf(group.workspace)) : [], [byFolder, visibleGroups.rest, folderOf]);
+  const folderWorkspaces = (folder: FolderGroup<WorkspaceGroup<WorkspaceInfo>>) => folder.groups.flatMap((group) => [group.workspace, ...group.children]);
+  const anyFolderOpen = visibleFolders.some((folder) => !worktreesFolded(`folder:${folder.key}`, folderWorkspaces(folder)));
+  useEffect(() => { onFoldersOpen?.(anyFolderOpen); }, [anyFolderOpen, onFoldersOpen]);
+  useEffect(() => {
+    if (foldAll === null) return;
+    for (const folder of visibleFolders) toggleWorktrees(`folder:${folder.key}`, !foldAll.collapse);
+  }, [foldAll]);
   // a pinned head's worktrees remain outside the card, but cannot move away from their repository
   const fixedIds = useMemo(() => new Set([...pinnedGroupIds(worktreeGroups, pinnedIds, (workspace) => workspace.workspace_id)].filter((id) => !pinnedIds.includes(id))), [worktreeGroups, pinnedIds]);
   const movableGroups = shownGroups.rest.filter((group) => !fixedIds.has(group.workspace.workspace_id));
@@ -979,7 +990,7 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions, watching = 
 
   /** a folder of the tree: its row folds the groups under it, as the Codex app's project does its threads */
   const renderFolder = (folder: FolderGroup<WorkspaceGroup<WorkspaceInfo>>) => {
-    const workspaces = folder.groups.flatMap((group) => [group.workspace, ...group.children]);
+    const workspaces = folderWorkspaces(folder);
     const panes = roster.filter((pane) => workspaces.some((workspace) => workspace.workspace_id === pane.workspace_id));
     if (panes.length === 0) return null;
     const foldKey = `folder:${folder.key}`;

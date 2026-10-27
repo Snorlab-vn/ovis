@@ -51,6 +51,8 @@ const BASE: Record<string, string> = {
   "Focus pane input": "ペインの入力欄にフォーカス",
   "Toggle sidebar": "サイドバーの切り替え",
   "The workspace opened, but {agent} did not start. Check that it is installed on the PC, then open it again.": "ワークスペースは開きましたが、{agent} は起動しませんでした。PC にインストールされているか確認してから、もう一度開いてください。",
+  "Collapse all folders": "すべてのフォルダを折りたたむ",
+  "Expand all folders": "すべてのフォルダを展開",
   "New workspace": "新しいワークスペース",
   "Previous pane": "前のペイン",
   "Next pane": "次のペイン",
