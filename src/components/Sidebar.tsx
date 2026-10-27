@@ -5,7 +5,7 @@ import "./Sidebar.css";
 // the folder tree draws agent rows under their workspace, styled as the Agents list's
 import "./AgentSidebar.css";
 
-import type { AgentKind, AgentStatus, PaneInfo, PlanSummary, SessionSnapshot, TabInfo, WorkspaceInfo } from "../../shared/protocol.ts";
+import type { AgentKind, AgentProfile, AgentStatus, PaneInfo, PlanSummary, SessionSnapshot, TabInfo, WorkspaceInfo } from "../../shared/protocol.ts";
 import { paneTokenValues, type AgentRowTokens } from "../../shared/pane-tokens.ts";
 import { paneTitle } from "../../shared/notify-policy.ts";
 import { MAX_LABEL_CHARS } from "../../shared/labels.ts";
@@ -289,7 +289,7 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions, watching = 
   const twoLine = settings.sidebarRows === "two";
   const machineId = useMachineId();
   const activity = useSidebarActivity();
-  const { closeWorkspace, createWorkspace, fetchAgentKinds, listWorktrees, moveWorkspace, removeWorktree, renameWorkspace } = useMachineApi();
+  const { closeWorkspace, createWorkspace, fetchAgentKinds, fetchAgentProfiles, listWorktrees, moveWorkspace, removeWorktree, renameWorkspace } = useMachineApi();
   // the row menu's Earlier sessions needs the PC's bridge to list them (lib/useSessionHistoryOffered.ts)
   const historyOffered = useSessionHistoryOffered(online);
   // the roster's wait is a live region in the list from its first render, clipped while empty (never
@@ -332,7 +332,7 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions, watching = 
   useEffect(() => { if (!filtering) setFilterFolds((current) => current.size === 0 ? current : new Map()); }, [filtering]);
   const [menu, setMenu] = useState<MenuState | null>(null);
   /** a folder's + menu: a shell or an agent, started at once in a new workspace in the folder */
-  const [folderMenu, setFolderMenu] = useState<{ anchor: HTMLElement; name: string; cwd: string; agents: AgentKind[] } | null>(null);
+  const [folderMenu, setFolderMenu] = useState<{ anchor: HTMLElement; name: string; cwd: string; agents: AgentKind[]; profiles: AgentProfile[] } | null>(null);
   /** the folder a + is starting a workspace in, while herdr answers (up to 60s with an agent) */
   const [creatingIn, setCreatingIn] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
@@ -481,20 +481,17 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions, watching = 
   const noteError = (message: string, workspaceId?: string, detail: string | null = null): void => setInlineError({ message, workspaceId, detail });
 
   const openFolderMenu = (anchor: HTMLElement, name: string, cwd: string): void => {
-    void fetchAgentKinds().then(
-      (agents) => setFolderMenu({ anchor, name, cwd, agents }),
-      // herdr's agents cannot be listed: a shell is still offered
-      () => setFolderMenu({ anchor, name, cwd, agents: [] }),
-    );
+    // herdr's agents that cannot be listed leave a shell offered; the profiles are an older bridge's none
+    void Promise.all([fetchAgentKinds().catch(() => []), fetchAgentProfiles()]).then(([agents, profiles]) => setFolderMenu({ anchor, name, cwd, agents, profiles }));
   };
 
   /** the folder's + : a workspace in it at once, no dialog, as the New workspace dialog would start it with its fields empty */
-  const createInFolder = async (cwd: string, agent: AgentKind | null): Promise<void> => {
+  const createInFolder = async (cwd: string, agent: AgentKind | null, profile: string | null = null): Promise<void> => {
     const launch = newSessionLaunch({ agent: agent?.kind ?? "", model: "", effort: "", prompt: "" }, settings);
     if ("fault" in launch || creatingIn !== null) return;
     setCreatingIn(cwd);
     try {
-      const created = await createWorkspace({ cwd, label: null, agent: launch.agent });
+      const created = await createWorkspace({ cwd, label: null, agent: launch.agent, ...(profile === null ? {} : { profile }) });
       if (agent && !created.agent_started) noteError(t("The workspace opened, but {agent} did not start. Check that it is installed on the PC, then open it again.", { agent: agent.label }), undefined, created.error?.message ?? null);
       else if (agent) actions.agentStarted(machineId, created.pane_id);
       actions.selectPane(created.pane_id);
@@ -1073,7 +1070,14 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions, watching = 
       {menu && <RowMenu anchor={menu.anchor} point={menu.point} restoreFocusTo={menu.previousFocus} title={menu.title} subtitle={menu.place} items={menuItems(menu)} onClose={closeMenu} />}
       {folderMenu && <RowMenu anchor={folderMenu.anchor} title={t("New workspace")} subtitle={folderMenu.name} onClose={() => setFolderMenu(null)} items={[
         { id: "shell", label: t("Terminal"), icon: Terminal, run: () => void createInFolder(folderMenu.cwd, null) },
-        ...folderMenu.agents.map((agent): RowMenuItem => ({ id: agent.kind, label: agent.label, icon: Terminal, glyph: <AgentMark agent={agent.kind} size={16} />, run: () => void createInFolder(folderMenu.cwd, agent) })),
+        ...folderMenu.agents.flatMap((agent): RowMenuItem[] => [
+          { id: agent.kind, label: agent.label, icon: Terminal, glyph: <AgentMark agent={agent.kind} size={16} />, run: () => void createInFolder(folderMenu.cwd, agent) },
+          // each profile of the agent right under it: the same agent, with the profile's environment
+          ...folderMenu.profiles.filter((profile) => profile.kind === agent.kind).map((profile): RowMenuItem => ({
+            id: `profile:${profile.name}`, label: profile.label, icon: Terminal, glyph: <AgentMark agent={agent.kind} size={16} />,
+            run: () => void createInFolder(folderMenu.cwd, { kind: agent.kind, label: profile.label }, profile.name),
+          })),
+        ]),
       ]} />}
       {confirm && <ConfirmDialog title={confirm.title} body={confirm.body} confirmLabel={confirm.action ?? t("Close")} onConfirm={confirm.run} escalation={confirm.escalation} onClose={() => setConfirm(null)} />}
       {worktreeDialog && <WorktreeDialog mode={worktreeDialog.mode} workspace={worktreeDialog.workspace} onClose={() => setWorktreeDialog(null)} onOpened={(opened) => {

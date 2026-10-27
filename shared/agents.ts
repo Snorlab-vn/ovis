@@ -5,3 +5,11 @@ export interface AgentKind {
   /** whether the server finds the agent's command (its kind) on its PATH; absent from an older bridge */
   installed?: boolean;
 }
+
+/** An agent started with an environment of its own (server/agent-profiles.ts); its environment never leaves the server. */
+export interface AgentProfile {
+  name: string;
+  /** the agent kind it starts */
+  kind: string;
+  label: string;
+}

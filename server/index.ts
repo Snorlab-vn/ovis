@@ -27,6 +27,7 @@ import { handlePlanRequest } from "./plan-routes.ts";
 import { ShellAgentLocator } from "./shell-agent.ts";
 import { handleAgentsRequest } from "./agents-routes.ts";
 import { handleConnectionsRequest } from "./connections.ts";
+import { handleAgentProfilesRequest, readAgentProfiles } from "./agent-profiles.ts";
 import { forgetPageMedia } from "./file-view.ts";
 import { handleFileRequest } from "./file-routes.ts";
 import { BACKGROUND_AGENT_PATH, handleBackgroundAgentRequest, type BackgroundAgentDeps } from "./background-agent.ts";
@@ -557,6 +558,9 @@ export function createServer(
       const agentsResponse = await handleAgentsRequest(request, pathname, shellAgents);
       if (agentsResponse) return agentsResponse;
 
+      const profilesResponse = handleAgentProfilesRequest(request, pathname, stateDir);
+      if (profilesResponse) return profilesResponse;
+
       const connectionsResponse = await handleConnectionsRequest(request, pathname, options.tailscaleStatus ?? readTailscaleStatus);
       if (connectionsResponse) return connectionsResponse;
 
@@ -571,7 +575,7 @@ export function createServer(
         const receipt = orderSequence.moved();
         void machines?.refreshLocal();
         return receipt;
-      }, shellAgents);
+      }, shellAgents, () => readAgentProfiles(stateDir));
       if (workspaceResponse) return workspaceResponse;
 
       const pluginResponse = await handlePluginRequest(request, url, pathname, options);

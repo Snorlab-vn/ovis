@@ -11,6 +11,8 @@ export interface CreateWorkspaceRequest {
   cwd?: string | null;
   label?: string | null;
   agent?: { kind: string; name?: string; args?: string[] } | null;
+  /** an agent profile's name (GET /api/agent-profiles): the workspace starts with its environment, and `agent` is its kind */
+  profile?: string | null;
   /**
    * the user's first message for the agent, sent by this request: the bridge queues it for the
    * agent's first ready turn through its pending path (server/core/pending.ts), where the pane's

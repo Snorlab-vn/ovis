@@ -1187,6 +1187,8 @@ async function route(url: URL, method: string, init: RequestInit | undefined, in
   }
   if (path === "/api/session") return json({ snapshot: readSnapshot(local) });
   if (path === "/api/agents") return json(agentsFixture);
+  // an agent started with an environment of its own (server/agent-profiles.ts), offered under its agent
+  if (path === "/api/agent-profiles") return json({ profiles: [{ name: "claude-work", kind: "claude", label: "Claude Code (work)" }] });
   // Connections: a made-up tailnet; Open SSH is a new tab named after the device in the first workspace
   if (path === "/api/connections/peers") return json({ available: true, peers: DEMO_PEERS });
   if (path === "/api/connections/ssh" && method === "POST") {

@@ -18,6 +18,7 @@ import { badRequest, conflictResponse, errorResponse, isJsonObject, jsonResponse
 import { paneContext } from "./pane-context.ts";
 import { repoDiffResponse } from "./repo-diff.ts";
 import type { ShellAgentLocator } from "./shell-agent.ts";
+import type { StoredAgentProfile } from "./agent-profiles.ts";
 
 /** `value` as an absolute path (`~` expanded) when it is a directory this user can read; null otherwise. */
 export function expandedDirectory(value: string): string | null {
@@ -39,7 +40,9 @@ const notQueued = (error: unknown): { error: { code: string; message: string } }
 export async function handleWorkspaceRequest(request: Request, url: URL, pathname: string, bunServer: Pick<Server<unknown>, "timeout">, broadcastAll: (message: ServerMessage) => void,
   queueFirstMessage: (paneId: string, text: string, kind: string, requester: string | null, launchedPid: number | null) => Promise<PendingMessage>,
   /** a move herdr confirmed: its receipt in this server's order (server/order-sequence.ts), taken at once */
-  workspaceMoved: () => MoveReceipt, shellAgents?: ShellAgentLocator): Promise<Response | null> {
+  workspaceMoved: () => MoveReceipt, shellAgents?: ShellAgentLocator,
+  /** the agent profiles a create request may name (server/agent-profiles.ts) */
+  agentProfiles: () => StoredAgentProfile[] = () => []): Promise<Response | null> {
   if (pathname === "/api/workspace/directories" && request.method === "POST") {
     setRequestRoute(pathname);
     let payload: unknown;
@@ -103,7 +106,7 @@ export async function handleWorkspaceRequest(request: Request, url: URL, pathnam
     setRequestRoute(pathname);
     const inWorkspace = pathname === "/api/tab/create";
     if (request.method !== "POST") return badRequest("method_not_allowed", "use POST");
-    const payload = await readJsonObject<{ workspace_id?: unknown; cwd?: unknown; label?: unknown; agent?: { kind?: unknown; name?: unknown; args?: unknown } | null; first_message?: unknown; first_message_connection?: unknown }>(request);
+    const payload = await readJsonObject<{ workspace_id?: unknown; cwd?: unknown; label?: unknown; agent?: { kind?: unknown; name?: unknown; args?: unknown } | null; profile?: unknown; first_message?: unknown; first_message_connection?: unknown }>(request);
     if (payload instanceof Response) return payload;
     if (inWorkspace && (typeof payload.workspace_id !== "string" || payload.workspace_id.trim() === "")) {
       return badRequest("missing_workspace_id", "workspace_id is required");
@@ -113,6 +116,12 @@ export async function handleWorkspaceRequest(request: Request, url: URL, pathnam
     if (payload.label === null) delete payload.label;
     if (payload.agent === null) delete payload.agent;
     if (payload.first_message === null) delete payload.first_message;
+    if (payload.profile === null) delete payload.profile;
+    // a profile names its agent's kind and brings its environment, which the workspace or tab starts with
+    const profile = payload.profile === undefined ? null : agentProfiles().find((candidate) => candidate.name === payload.profile) ?? null;
+    if (payload.profile !== undefined && (profile === null || !payload.agent || payload.agent.kind !== profile.kind)) {
+      return badRequest("invalid_profile", "profile must be one of this PC's agent profiles, with an agent of its kind");
+    }
     if (payload.cwd !== undefined && typeof payload.cwd !== "string") return badRequest("invalid_cwd", "cwd must be an existing directory");
     const cwd = payload.cwd === undefined ? undefined : expandedDirectory(payload.cwd);
     if (payload.cwd !== undefined && cwd === null) return badRequest("invalid_cwd", "cwd must be an existing directory");
@@ -139,6 +148,7 @@ export async function handleWorkspaceRequest(request: Request, url: URL, pathnam
       const options = {
         ...(cwd === undefined || cwd === null ? {} : { cwd }),
         ...(typeof payload.label === "string" ? { label: payload.label } : {}),
+        ...(profile === null ? {} : { env: profile.env }),
       };
       const created = inWorkspace
         ? await tabCreate({ ...options, workspaceId: payload.workspace_id as string })

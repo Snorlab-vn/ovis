@@ -47,6 +47,7 @@ export function useMachineApi() {
     renameWorkspace: (workspace: string, label: string) => api.renameWorkspace(workspace, label, id),
     moveWorkspace: (workspace: string, index: number) => api.moveWorkspace(workspace, index, id),
     fetchAgentKinds: () => api.fetchAgentKinds(id),
+    fetchAgentProfiles: () => api.fetchAgentProfiles(id),
     fetchIntegrations: () => api.fetchIntegrations(id),
     fetchDirectories: (path: string, hidden: boolean, files = false, pane: string | null = null) => api.fetchDirectories(path, hidden, id, files, pane),
     createDirectory: (path: string, name: string) => api.createDirectory(path, name, id),

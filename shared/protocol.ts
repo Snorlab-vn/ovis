@@ -551,7 +551,7 @@ export type { FileKind, FileInfo, ProjectFavicon } from "./files.ts";
 
 export type { RepoDiffScope, RepoBranchComparison, RepoDiffRefs, RepoDiffStatus, RepoDiffRepository, RepoDiffFile, RepoDiffFileList, RepoDiffFilePatch } from "./repo-diff.ts";
 
-export type { AgentKind } from "./agents.ts";
+export type { AgentKind, AgentProfile } from "./agents.ts";
 
 export type { AgentIntegration, IntegrationsResponse } from "./integrations.ts";
 

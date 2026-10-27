@@ -1035,7 +1035,8 @@ Alert rows of the table above from the `--droplet-*` roles in `src/styles.css`.
   **Agents list** (Auto, On, Off) shows the separate list; Auto leaves it out of the folder tree.
   A folder's row has a `+` (shown on hover or focus, always on touch) listing a terminal and herdr's
   agents with their marks: the pick starts at once in a new workspace in that folder, with the New
-  workspace dialog's defaults. The PC row's fold-all (copy-minus / copy-plus) folds every folder
+  workspace dialog's defaults; an agent profile (an agent with an environment of its own, kept on
+  the PC, server/agent-profiles.ts) is listed right under its agent, with the agent's mark. The PC row's fold-all (copy-minus / copy-plus) folds every folder
   while one is open, and opens them all once all are folded.
 - **Needs attention** (`NeedsAttention`, AgentSidebar.tsx), as Tasky heads its sidebar: above the PCs,
   the agents of every connected PC that ask something (blocked) and then those that finished and were

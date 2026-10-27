@@ -1,5 +1,6 @@
 import { apiFetch as fetch } from "./api-request-id.ts";
 import type { SshOpened, TailnetPeers } from "../../shared/connections.ts";
+import type { AgentProfile } from "../../shared/agents.ts";
 import type { PreferencesChange, SharedPreferences } from "../../shared/preferences.ts";
 import type { SeenFinish } from "../../shared/seen.ts";
 import { resumeConnectionTraces } from "./connectionTrace.ts";
@@ -626,6 +627,11 @@ export async function clearPane(paneId: string, machineId = "local"): Promise<vo
 }
 
 /** GET /api/agents: of the agent kinds herdr can start, the ones this app supports and that PC has installed, for the new-session dialog. */
+/** GET /api/agent-profiles: the agents this PC starts with an environment of their own; an older bridge has none. */
+export async function fetchAgentProfiles(machineId = "local"): Promise<AgentProfile[]> {
+  return (await getJson<{ profiles: AgentProfile[] }>(machinePath(machineId, "agent-profiles")).catch(() => ({ profiles: [] }))).profiles;
+}
+
 export async function fetchAgentKinds(machineId = "local"): Promise<AgentKind[]> {
   // filtered here, not on the server: a remote PC's older bridge still answers every manifest,
   // and says nothing of what is installed, so its supported kinds are all offered
