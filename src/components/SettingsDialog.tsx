@@ -583,7 +583,6 @@ function VoicePage() {
   const t = useT();
   // the server only says whether it holds a key; the key typed here is never kept past a save
   const [voice, setVoice] = useState<VoiceStatus | null>(null);
-  const [voiceKey, setVoiceKey] = useState("");
   const [voiceBusy, setVoiceBusy] = useState(false);
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const [micDenied, setMicDenied] = useState(false);
@@ -603,20 +602,19 @@ function VoicePage() {
     try { (await navigator.mediaDevices.getUserMedia({ audio: true })).getTracks().forEach((track) => track.stop()); }
     catch { setMicDenied(true); }
   };
-  const changeVoiceConfig = async (update: VoiceConfigUpdate): Promise<boolean> => {
+  /** null when saved, else the reason, for the form that asked to show */
+  const changeVoiceConfig = async (update: VoiceConfigUpdate): Promise<string | null> => {
     setVoiceBusy(true);
     try {
       // the save answers the new status itself: no second request that could fail after it
       const saved = await saveVoiceConfig(update);
-      setVoiceKey("");
-      setVoiceError(null);
       setVoice(saved);
       window.dispatchEvent(new Event(VOICE_CONFIG_EVENT));
-      return true;
-    } catch (e) { setVoiceError(e instanceof Error ? e.message : String(e)); return false; }
+      return null;
+    } catch (e) { return e instanceof Error ? e.message : String(e); }
     finally { setVoiceBusy(false); }
   };
-  const changeVoiceKey = (api_key: string | null) => changeVoiceConfig({ api_key });
+  const removeVoiceKey = async () => setVoiceError(await changeVoiceConfig({ api_key: null }));
   const micProblem = settings.voiceInput === "off" ? null : !window.isSecureContext ? t("Voice input needs HTTPS") : micDenied ? t("Microphone permission was denied") : null;
   return (
     <>
@@ -633,7 +631,7 @@ function VoicePage() {
 
       {settings.voiceInput !== "off" && (
         <SettingsGroup title={t("Tidy dictated text")} section="tidy-dictation">
-          <SettingsRow label={t("In chat")} description={t("Drops fillers and fixes spacing; code and paths stay as spoken")}>
+          <SettingsRow label={t("In chat")} description={t("Drops fillers, fixes spacing and corrects misheard code terms")}>
             <Toggle label={t("Tidy dictated text in chat")} checked={settings.voicePolishChat} onChange={(voicePolishChat) => update({ voicePolishChat })} />
           </SettingsRow>
           <SettingsRow label={t("In the terminal")} description={t("Off keeps a command exactly as transcribed")}>
@@ -652,31 +650,17 @@ function VoicePage() {
             </p>
           )}
           {voice && voice.source !== "env" && (
-            <ProviderForm key={`${voice.base_url} ${voice.transcribe_model}`} busy={voiceBusy} base={voice.base_url} model={voice.transcribe_model} models={voiceModels}
-              onSave={(base, model) => changeVoiceConfig({
+            <ServerForm key={`${voice.base_url} ${voice.transcribe_model}`} busy={voiceBusy} base={voice.base_url} model={voice.transcribe_model} models={voiceModels}
+              keySet={voice.source === "file"} keyLabel={t("OpenAI API key")}
+              onSave={(base, model, key) => changeVoiceConfig({
                 ...(base !== voice.base_url ? { base_url: base || null } : {}),
                 ...(model !== voice.transcribe_model ? { transcribe_model: model || null } : {}),
                 // a saved key never follows the server elsewhere: moving without a new one drops it
-                ...(voiceKey.trim() ? { api_key: voiceKey.trim() } : base !== voice.base_url && voice.source === "file" ? { api_key: null } : {}),
+                ...(key ? { api_key: key } : base !== voice.base_url && voice.source === "file" ? { api_key: null } : {}),
               })} />
           )}
-          {voice && voice.source !== "env" && (
-            <form className="voice-key" onSubmit={(event) => { event.preventDefault(); if (voiceKey.trim()) void changeVoiceKey(voiceKey.trim()); }}>
-              <input
-                className="input voice-key-input"
-                type="password"
-                value={voiceKey}
-                placeholder="sk-..."
-                aria-label={t("OpenAI API key")}
-                autoComplete="off"
-                spellCheck={false}
-                autoCapitalize="off"
-                autoCorrect="off"
-                onChange={(event) => setVoiceKey(event.target.value)}
-              />
-              <button type="submit" className="btn voice-key-save" disabled={voiceBusy || !voiceKey.trim()}>{t("Save key")}</button>
-              <button type="button" className="btn btn-ghost voice-key-remove" disabled={voiceBusy || !voice.configured} onClick={() => void changeVoiceKey(null)}>{t("Remove key")}</button>
-            </form>
+          {voice?.source === "file" && (
+            <button type="button" className="btn btn-ghost voice-key-remove" disabled={voiceBusy} onClick={() => void removeVoiceKey()}>{t("Remove key")}</button>
           )}
           {voiceError && <p className="settings-hint voice-error" role="alert">{voiceError}</p>}
           <p className="settings-hint voice-privacy">
@@ -691,7 +675,14 @@ function VoicePage() {
       {voice && settings.voiceInput !== "off" && (
         <SettingsGroup title={t("Tidying server")} section="tidy-server">
           <div className="settings-item">
-            <TidyForm key={`${voice.polish_base_url} ${voice.polish_model}`} voice={voice} busy={voiceBusy} onSave={changeVoiceConfig} />
+            <ServerForm key={`${voice.polish_base_url} ${voice.polish_model}`} busy={voiceBusy} base={voice.polish_base_url ?? ""} model={voice.polish_model}
+              basePlaceholder={voice.base_url} keySet={voice.polish_key_set} keyLabel={t("API key")}
+              onSave={(base, model, key) => changeVoiceConfig({
+                ...(base !== (voice.polish_base_url ?? "") ? { polish_base_url: base || null } : {}),
+                ...(model !== voice.polish_model ? { polish_model: model || null } : {}),
+                ...(key ? { polish_api_key: key } : base !== (voice.polish_base_url ?? "") && voice.polish_key_set ? { polish_api_key: null } : {}),
+              })} />
+            <p className="settings-hint">{t("Empty tidies on the speech recognition server")}</p>
           </div>
         </SettingsGroup>
       )}
@@ -699,52 +690,39 @@ function VoicePage() {
   );
 }
 
-/** An OpenAI-compatible server and its model; Save sends only what changed. */
-function ProviderForm({ base, model, busy, basePlaceholder, models = [], onSave, children }: {
-  base: string; model: string; busy: boolean; basePlaceholder?: string; models?: VoiceModels["models"];
-  onSave: (base: string, model: string) => Promise<boolean>; children?: ReactNode;
+/** An OpenAI-compatible server, its model and key; Save sends only what changed, a reason shows here. */
+function ServerForm({ base, model, busy, basePlaceholder, models = [], keySet, keyLabel, onSave }: {
+  base: string; model: string; busy: boolean; basePlaceholder?: string; models?: VoiceModels["models"]; keySet: boolean; keyLabel: string;
+  onSave: (base: string, model: string, key: string) => Promise<string | null>;
 }) {
   const t = useT();
   const [nextBase, setNextBase] = useState(base);
   const [nextModel, setNextModel] = useState(model);
-  const field = { className: "input voice-key-input", autoComplete: "off", spellCheck: false, autoCapitalize: "off", autoCorrect: "off" } as const;
-  return (
-    <form className="voice-key" onSubmit={(event) => { event.preventDefault(); void onSave(nextBase.trim(), nextModel.trim()); }}>
-      <input {...field} type="url" value={nextBase} placeholder={basePlaceholder ?? "https://api.openai.com/v1"} aria-label={t("Server URL")} onChange={(event) => setNextBase(event.target.value)} />
-      {models.length > 0 ? (
-        <select className="input voice-key-input" value={nextModel} aria-label={t("Model name")} onChange={(event) => setNextModel(event.target.value)}>
-          {!models.some((entry) => entry.id === nextModel) && <option value={nextModel}>{nextModel}</option>}
-          {models.map((entry) => <option key={entry.id} value={entry.id}>{entry.name ?? entry.id}</option>)}
-        </select>
-      ) : (
-        <input {...field} value={nextModel} aria-label={t("Model name")} placeholder={t("Model name")} onChange={(event) => setNextModel(event.target.value)} />
-      )}
-      {children}
-      <button type="submit" className="btn" disabled={busy}>{t("Save server")}</button>
-    </form>
-  );
-}
-
-/** Tidying's own server, key and model; an empty server tidies where the speech is recognized. */
-function TidyForm({ voice, busy, onSave }: { voice: VoiceStatus; busy: boolean; onSave: (update: VoiceConfigUpdate) => Promise<boolean> }) {
-  const t = useT();
+  // the key typed here is never kept past a save
   const [key, setKey] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const field = { className: "input voice-key-input", autoComplete: "off", spellCheck: false, autoCapitalize: "off", autoCorrect: "off" } as const;
+  const save = async () => {
+    const failed = await onSave(nextBase.trim(), nextModel.trim(), key.trim());
+    setError(failed);
+    if (failed === null) setKey("");
+  };
   return (
     <>
-      <ProviderForm base={voice.polish_base_url ?? ""} model={voice.polish_model} busy={busy} basePlaceholder={voice.base_url}
-        onSave={async (base, model) => {
-          const saved = await onSave({
-            ...(base !== (voice.polish_base_url ?? "") ? { polish_base_url: base || null } : {}),
-            ...(model !== voice.polish_model ? { polish_model: model || null } : {}),
-            ...(key.trim() ? { polish_api_key: key.trim() } : base !== (voice.polish_base_url ?? "") && voice.polish_key_set ? { polish_api_key: null } : {}),
-          });
-          if (saved) setKey("");
-          return saved;
-        }}>
-        <input className="input voice-key-input" type="password" value={key} placeholder={voice.polish_key_set ? t("Key saved") : "sk-..."} aria-label={t("API key")}
-          autoComplete="off" spellCheck={false} autoCapitalize="off" autoCorrect="off" onChange={(event) => setKey(event.target.value)} />
-      </ProviderForm>
-      <p className="settings-hint">{t("Empty uses the speech recognition server and its key")}</p>
+      <form className="voice-key" onSubmit={(event) => { event.preventDefault(); void save(); }}>
+        <input {...field} type="url" value={nextBase} placeholder={basePlaceholder ?? "https://api.openai.com/v1"} aria-label={t("Server URL")} onChange={(event) => setNextBase(event.target.value)} />
+        {models.length > 0 ? (
+          <select className="input voice-key-input" value={nextModel} aria-label={t("Model name")} onChange={(event) => setNextModel(event.target.value)}>
+            {!models.some((entry) => entry.id === nextModel) && <option value={nextModel}>{nextModel}</option>}
+            {models.map((entry) => <option key={entry.id} value={entry.id}>{entry.name ?? entry.id}</option>)}
+          </select>
+        ) : (
+          <input {...field} value={nextModel} aria-label={t("Model name")} placeholder={t("Model name")} onChange={(event) => setNextModel(event.target.value)} />
+        )}
+        <input {...field} type="password" value={key} placeholder={keySet ? t("Key saved") : "sk-..."} aria-label={keyLabel} onChange={(event) => setKey(event.target.value)} />
+        <button type="submit" className="btn" disabled={busy}>{t("Save server")}</button>
+      </form>
+      {error && <p className="settings-hint voice-error" role="alert">{error}</p>}
     </>
   );
 }

@@ -170,7 +170,6 @@ export const SETTINGS_KO: Record<string, string> = {
   "Follow herdr's focus": "herdr 포커스 따라가기",
   "When herdr moves to another pane, by a click in its window, a herdr command or a script, this device opens that pane too. Only on the PC open here, and only on this device. A PC on Ovis older than 0.4.13 does not report herdr's focus: update it first.": "herdr가 다른 패널로 옮겨 가면(herdr 창에서 클릭, herdr 명령, 스크립트) 이 기기도 그 패널을 엽니다. 여기서 연 PC에서만, 이 기기에서만 적용됩니다. Ovis 0.4.13보다 오래된 PC는 herdr 포커스를 알리지 않으니 먼저 업데이트하세요.",
   "Without a key the browser recognizes the speech: Chrome and Edge send the audio to Google or Microsoft. Nothing is recorded until you press the mic.": "키가 없으면 브라우저가 음성을 인식합니다. Chrome과 Edge는 오디오를 Google이나 Microsoft로 보냅니다. 마이크를 누르기 전에는 녹음되지 않습니다.",
-  "Drops fillers and fixes spacing; code and paths stay as spoken": "군말을 지우고 띄어쓰기를 고칩니다. 코드와 경로는 말한 그대로 둡니다",
   "In chat": "채팅",
   "Auto: in the chat on a desktop, where dictation can work. On: on a phone and in the terminal input line too.": "자동: 데스크톱 채팅에서 받아쓰기가 가능할 때만 표시. 켜기: 휴대폰과 터미널 입력줄에도 표시.",
   "On": "켜기",
@@ -187,7 +186,6 @@ export const SETTINGS_KO: Record<string, string> = {
   "OpenAI key saved on this PC": "OpenAI 키가 이 PC에 저장되었습니다",
   "OpenAI key set by OVIS_OPENAI_API_KEY": "OVIS_OPENAI_API_KEY 환경 변수에 OpenAI 키가 설정되어 있습니다",
   "Remove key": "키 삭제",
-  "Save key": "키 저장",
   "Tidy dictated text in chat": "채팅 받아쓰기 텍스트 다듬기",
   "Tidy dictated text in the terminal": "터미널 받아쓰기 텍스트 다듬기",
   "Voice input": "음성 입력",
@@ -340,5 +338,6 @@ export const SETTINGS_KO: Record<string, string> = {
   "Save server": "서버 저장",
   "Key saved": "키 저장됨",
   "API key": "API 키",
-  "Empty uses the speech recognition server and its key": "비워 두면 음성 인식 서버와 그 키를 사용합니다",
+  "Drops fillers, fixes spacing and corrects misheard code terms": "군말을 지우고 띄어쓰기를 고치며 잘못 들린 코드 용어를 바로잡습니다",
+  "Empty tidies on the speech recognition server": "비워 두면 음성 인식 서버에서 다듬습니다",
 };

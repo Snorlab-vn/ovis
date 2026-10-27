@@ -170,7 +170,6 @@ export const SETTINGS_ZH: Record<string, string> = {
   "Follow herdr's focus": "跟随 herdr 的焦点",
   "When herdr moves to another pane, by a click in its window, a herdr command or a script, this device opens that pane too. Only on the PC open here, and only on this device. A PC on Ovis older than 0.4.13 does not report herdr's focus: update it first.": "herdr 切换到另一个窗格时（在 herdr 窗口中点击、herdr 命令或脚本），此设备也会打开该窗格。仅适用于这里打开的 PC，且仅适用于此设备。Ovis 版本早于 0.4.13 的 PC 不会报告 herdr 的焦点，请先更新。",
   "Without a key the browser recognizes the speech: Chrome and Edge send the audio to Google or Microsoft. Nothing is recorded until you press the mic.": "没有密钥时由浏览器识别语音：Chrome 和 Edge 会把音频发送给 Google 或 Microsoft。按下麦克风前不会录音。",
-  "Drops fillers and fixes spacing; code and paths stay as spoken": "去掉口头禅并修正空格；代码和路径保持原样",
   "In chat": "聊天",
   "Auto: in the chat on a desktop, where dictation can work. On: on a phone and in the terminal input line too.": "自动:仅在桌面端聊天中、可以听写时显示。开启:在手机和终端输入行也显示。",
   "On": "开启",
@@ -187,7 +186,6 @@ export const SETTINGS_ZH: Record<string, string> = {
   "OpenAI key saved on this PC": "OpenAI 密钥已保存在此电脑上",
   "OpenAI key set by OVIS_OPENAI_API_KEY": "已通过 OVIS_OPENAI_API_KEY 设置 OpenAI 密钥",
   "Remove key": "移除密钥",
-  "Save key": "保存密钥",
   "Tidy dictated text in chat": "整理聊天中的听写文本",
   "Tidy dictated text in the terminal": "整理终端中的听写文本",
   "Voice input": "语音输入",
@@ -340,5 +338,6 @@ export const SETTINGS_ZH: Record<string, string> = {
   "Save server": "保存服务器",
   "Key saved": "密钥已保存",
   "API key": "API 密钥",
-  "Empty uses the speech recognition server and its key": "留空则使用语音识别服务器及其密钥",
+  "Drops fillers, fixes spacing and corrects misheard code terms": "去掉口头禅、修正空格，并纠正听错的代码术语",
+  "Empty tidies on the speech recognition server": "留空则在语音识别服务器上整理",
 };

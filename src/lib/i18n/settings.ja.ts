@@ -170,7 +170,6 @@ export const SETTINGS_JA: Record<string, string> = {
   "Follow herdr's focus": "herdr のフォーカスに追従",
   "When herdr moves to another pane, by a click in its window, a herdr command or a script, this device opens that pane too. Only on the PC open here, and only on this device. A PC on Ovis older than 0.4.13 does not report herdr's focus: update it first.": "herdr が別のペインに移ると（herdr のウィンドウでのクリック、herdr コマンド、スクリプト）、このデバイスもそのペインを開きます。ここで開いている PC だけで、このデバイスだけに適用されます。Ovis 0.4.13 より古い PC は herdr のフォーカスを知らせないため、先に更新してください。",
   "Without a key the browser recognizes the speech: Chrome and Edge send the audio to Google or Microsoft. Nothing is recorded until you press the mic.": "キーがない場合はブラウザが音声を認識します。Chrome と Edge は音声を Google または Microsoft に送信します。マイクを押すまで録音されません。",
-  "Drops fillers and fixes spacing; code and paths stay as spoken": "言いよどみを除き、スペースを整えます。コードとパスはそのまま残します",
   "In chat": "チャット",
   "Auto: in the chat on a desktop, where dictation can work. On: on a phone and in the terminal input line too.": "自動: デスクトップのチャットで、音声入力が使えるときだけ表示。オン: スマートフォンとターミナルの入力行にも表示。",
   "On": "オン",
@@ -187,7 +186,6 @@ export const SETTINGS_JA: Record<string, string> = {
   "OpenAI key saved on this PC": "OpenAI キーをこの PC に保存しました",
   "OpenAI key set by OVIS_OPENAI_API_KEY": "OVIS_OPENAI_API_KEY で OpenAI キーが設定されています",
   "Remove key": "キーを削除",
-  "Save key": "キーを保存",
   "Tidy dictated text in chat": "チャットの音声入力テキストを整える",
   "Tidy dictated text in the terminal": "ターミナルの音声入力テキストを整える",
   "Voice input": "音声入力",
@@ -340,5 +338,6 @@ export const SETTINGS_JA: Record<string, string> = {
   "Save server": "サーバーを保存",
   "Key saved": "キー保存済み",
   "API key": "APIキー",
-  "Empty uses the speech recognition server and its key": "空欄なら音声認識サーバーとそのキーを使います",
+  "Drops fillers, fixes spacing and corrects misheard code terms": "つなぎ言葉を除き、スペースを整え、聞き間違えたコード用語を直します",
+  "Empty tidies on the speech recognition server": "空欄なら音声認識サーバーで整形します",
 };
