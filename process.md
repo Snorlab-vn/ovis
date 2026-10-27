@@ -29,19 +29,26 @@ only after its checks and a real-browser check.
 | Merge `feat/local-asr-refine` into `main` | done | fast-forward |
 | Upgrade Bun to 1.4 | done | 1.4.4; typecheck clean |
 | Demo transport answers `/api/voice/models` | done | conventions test |
-| Push `main` to the fork | blocked | global ECC pre-push hook runs the full test script; its failures also fail on untouched upstream on this Mac |
+| Push `main` to the fork | done | Snorlab-vn/ovis (org fork of devswha/ovis); pushed with ECC_SKIP_PREPUSH=1 at the owner's OK |
 
-## Step 1: sidebar grouped by project folder
+## Step 1: sidebar tree: PC > folder > workspace > pane (option B)
+
+Decided with the owner: the tree replaces the separate Agents list; a folder row even for one
+workspace; on by default, with a setting "Group by folder" whose off state is today's sidebar
+exactly (the safety net); drag stays smooth (a workspace within its folder, a folder as a block).
 
 | Task | Status | Notes |
 |---|---|---|
-| 1.1 Read `Sidebar.tsx`, `MachineSidebar.tsx`, the workspace row and DESIGN.md sidebar section | todo | how rows, filter and focus work today |
-| 1.2 Grouping function: `worktree.repo_root` (name `repo_name`), else first pane cwd; order kept | todo | pure, in `src/lib/`, unit tests |
-| 1.3 Setting "Group workspaces by folder" (default, `sanitizeSettings`, Appearance row, i18n) | todo | |
-| 1.4 Project row: chevron, name, count; collapse/expand by click and keyboard | todo | follows an existing tree/group pattern in the app |
-| 1.5 Collapsed state per PC and project, kept across reloads | todo | settings or existing per-view storage |
-| 1.6 Filter opens a collapsed project when it matches inside | todo | |
-| 1.7 Tests, browser check (desktop, 390px), changelog fragment | todo | |
+| 1.1 Read `Sidebar.tsx`, `MachineSidebar.tsx`, the workspace row and DESIGN.md sidebar section | done | see "Findings" below |
+| 1.1b Analyse the owner's mockup and agree the design | done | option B, mock trees in the chat |
+| 1.2 `folderGroups()` in `src/lib/`: worktree groups into folders keyed by `worktree.repo_root`, else the first pane's cwd; name `repo_name` or the folder's basename; herdr's order kept | done | `workspaceOrder.ts` `folderGroups`, `workspaceFolder` + tests |
+| 1.3 Setting `sidebarLayout` ("folders" default, "workspaces") (default on, `sanitizeSettings`, Appearance row, i18n) | done | shared setting; excluded from telemetry and the legacy fixture like other new settings |
+| 1.4 Folder row: fold, name, count; fold state per PC in localStorage like the worktree fold | todo | folded row carries its panes' rolled-up state |
+| 1.5 Pane rows under a workspace (agent mark, title, state, unread), reusing AgentSidebar's row parts; a workspace row folds its panes | todo | click selects that pane |
+| 1.6 Hide the Agents list while grouped; keep its features reachable (Activity order, filter matches panes) | todo | |
+| 1.7 Drag: a workspace within its folder, a folder as a block (`placeBlock`/`workspaceMoves`) | todo | touch reorder too |
+| 1.8 Filter: matches workspaces and panes, opens folds it needs | todo | reuse `filterWorkspaceGroups` |
+| 1.9 Tests, browser check (desktop, 390px), changelog fragment | todo | |
 
 ## Step 2: Needs attention and "answered ago"
 
@@ -51,6 +58,7 @@ only after its checks and a real-browser check.
 | 2.2 Selection: waiting for input, or finished and unread | todo | pure, unit tests |
 | 2.3 "Needs attention" list on top of the sidebar | todo | |
 | 2.4 Compact "answered ago" on agent rows (0s, 3m, 2h) | todo | reuse an existing time formatter |
+| 2.4b Unread mark on agent rows the user has not opened since they finished | todo | reuse `sidebarActivity` / `seenFinishes` (already shared across browsers); also a count on a folded folder or PC |
 | 2.5 Tests, browser check, changelog fragment | todo | |
 
 ## Step 3: Connections (tailnet devices, one-click SSH)
@@ -62,6 +70,26 @@ only after its checks and a real-browser check.
 | 3.3 Contract tests with a fake `tailscale` and isolated herdr; demo transport routes | todo | |
 | 3.4 Connections page: search, online first, per-peer user, Open SSH, Add as Remote PC | todo | |
 | 3.5 i18n, browser check, changelog fragment | todo | |
+
+## Findings (1.1)
+
+- PCs are already top-level, foldable sections (`MachineSidebar.tsx`, `machine-group`, "Host" badge).
+- Workspaces already fold linked worktrees under their repo's main workspace
+  (`worktreeGroups` in `src/lib/workspaceOrder.ts`; fold state in localStorage
+  `ovis:worktree-group-collapsed:<pc>:<repo_key>`; the filter opens a fold with a match).
+- Rows are herdr's order and can be dragged and pinned (`sidebarPins.ts`, `workspaceMoves`);
+  any folder level must keep that order and not fight the drag.
+- "Finished, not looked at" already exists: `sidebarActivity.tsx` + `seenFinishes.ts` drive the dot.
+- Agents are a separate list under the PCs (`AgentSidebar.tsx`).
+
+## Mockup (owner's Workspace Navigator)
+
+- Tree: PC (Host, status dot, foldable) > folder (repo or cwd, foldable, item count or state) >
+  rows: the workspace and each of its agent and terminal panes, with a state pill (Idle, Active,
+  Done, Orchestrating), a version or pid.
+- Filter chips over the tree: All n, Running n, CLI n, Agents.
+- Other PCs folded with "n folders"; tailnet machines join here as PCs (step 3).
+- Footer: host CPU and RAM.
 
 ## Backlog
 

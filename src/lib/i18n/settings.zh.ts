@@ -340,4 +340,7 @@ export const SETTINGS_ZH: Record<string, string> = {
   "API key": "API 密钥",
   "Drops fillers, fixes spacing and corrects misheard code terms": "去掉口头禅、修正空格，并纠正听错的代码术语",
   "Empty tidies on the speech recognition server": "留空则在语音识别服务器上整理",
+  "Sidebar layout": "侧边栏布局",
+  "By folder": "按文件夹",
+  "By folder groups workspaces by folder with their agents under them; Workspaces keeps the list and the Agents list": "按文件夹将工作区按文件夹归组，并把代理放在其下；工作区保留列表和代理列表",
 };

@@ -340,4 +340,7 @@ export const SETTINGS_KO: Record<string, string> = {
   "API key": "API 키",
   "Drops fillers, fixes spacing and corrects misheard code terms": "군말을 지우고 띄어쓰기를 고치며 잘못 들린 코드 용어를 바로잡습니다",
   "Empty tidies on the speech recognition server": "비워 두면 음성 인식 서버에서 다듬습니다",
+  "Sidebar layout": "사이드바 구성",
+  "By folder": "폴더별",
+  "By folder groups workspaces by folder with their agents under them; Workspaces keeps the list and the Agents list": "폴더별은 작업 공간을 폴더로 묶고 그 아래에 에이전트를 둡니다. 워크스페이스순은 목록과 에이전트 목록을 그대로 둡니다",
 };

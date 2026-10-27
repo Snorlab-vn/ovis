@@ -1,4 +1,5 @@
 import type { WorkspaceMoved } from "../../shared/protocol.ts";
+import { folderName } from "./paneName.ts";
 import { movedTabOrder } from "./tabOrder.ts";
 
 /**
@@ -71,6 +72,36 @@ export function worktreeGroups<W extends GroupedWorkspace>(ordered: readonly W[]
     childrenOf.set(parent.workspace_id, children);
   }
   return top.map((workspace) => ({ workspace, children: childrenOf.get(workspace.workspace_id) ?? [] }));
+}
+
+/** A folder of the sidebar's tree: the groups of one checkout or directory, in herdr's order. */
+export interface FolderGroup<G> { key: string; name: string; groups: G[] }
+
+/**
+ * Where a workspace sits in the sidebar's folder tree: its repository's root when herdr reports a
+ * checkout (a repository and its worktrees share one folder), else its first pane's directory, the
+ * one its row's icon already reads (WorkspaceFavicon). A workspace with neither is a folder of its own.
+ */
+export function workspaceFolder(workspace: { workspace_id: string; label: string; worktree?: { repo_root: string; repo_name: string } | null }, cwd: string | null | undefined): { key: string; name: string } {
+  if (workspace.worktree) return { key: workspace.worktree.repo_root, name: workspace.worktree.repo_name };
+  // ponytail: a shell that cds elsewhere moves its workspace to that folder; a stored root would pin it
+  if (cwd) return { key: cwd, name: folderName(cwd) };
+  return { key: `workspace:${workspace.workspace_id}`, name: workspace.label };
+}
+
+/**
+ * The sidebar's folder tree, as the Codex app lists threads under their project: each folder stands
+ * where its first group does in herdr's order, and keeps its groups in that order.
+ */
+export function folderGroups<G>(groups: readonly G[], place: (group: G) => { key: string; name: string }): FolderGroup<G>[] {
+  const folders = new Map<string, FolderGroup<G>>();
+  for (const group of groups) {
+    const { key, name } = place(group);
+    const folder = folders.get(key);
+    if (folder) folder.groups.push(group);
+    else folders.set(key, { key, name, groups: [group] });
+  }
+  return [...folders.values()];
 }
 
 /** `base`'s order for the workspaces `ids` still has; the ones it lacks follow, in `ids`' order. */

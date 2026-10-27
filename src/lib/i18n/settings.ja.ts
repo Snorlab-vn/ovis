@@ -340,4 +340,7 @@ export const SETTINGS_JA: Record<string, string> = {
   "API key": "APIキー",
   "Drops fillers, fixes spacing and corrects misheard code terms": "つなぎ言葉を除き、スペースを整え、聞き間違えたコード用語を直します",
   "Empty tidies on the speech recognition server": "空欄なら音声認識サーバーで整形します",
+  "Sidebar layout": "サイドバーの構成",
+  "By folder": "フォルダー別",
+  "By folder groups workspaces by folder with their agents under them; Workspaces keeps the list and the Agents list": "フォルダー別はワークスペースをフォルダーごとにまとめ、その下にエージェントを置きます。ワークスペースは一覧とエージェント一覧のままです",
 };

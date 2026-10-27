@@ -2,7 +2,7 @@ import { describe, expect, spyOn, test } from "bun:test";
 import type { WorkspaceMoved } from "../../shared/protocol.ts";
 import { SnapshotRequests } from "./snapshotRequests.ts";
 import { movedTabOrder } from "./tabOrder.ts";
-import { placeBlock, ReorderCoordinator, workspaceMoves, worktreeGroups, type OrderRosterEntry, type RosterSource, type WorkspaceMove } from "./workspaceOrder.ts";
+import { folderGroups, placeBlock, ReorderCoordinator, workspaceFolder, workspaceMoves, worktreeGroups, type OrderRosterEntry, type RosterSource, type WorkspaceMove } from "./workspaceOrder.ts";
 
 const start = ["X", "A", "a1", "a2", "a3", "B", "b1", "C"];
 
@@ -35,6 +35,36 @@ describe("worktreeGroups", () => {
 
   test("a worktree whose repository is not open stays at the top level", () => {
     expect(shape([space("x1", "x", true), space("B", "b")])).toEqual([["x1", []], ["B", []]]);
+  });
+});
+
+describe("folderGroups", () => {
+  const folders = (groups: [string, string][]) => folderGroups(groups, ([, key]) => ({ key, name: key })).map(({ key, groups: inside }) => [key, inside.map(([id]) => id)]);
+
+  test("a folder stands where its first group does and keeps herdr's order inside", () => {
+    expect(folders([["A", "x"], ["B", "y"], ["C", "x"], ["D", "z"], ["E", "y"]])).toEqual([["x", ["A", "C"]], ["y", ["B", "E"]], ["z", ["D"]]]);
+  });
+
+  test("a folder holds one group as well as many", () => {
+    expect(folders([["A", "x"]])).toEqual([["x", ["A"]]]);
+    expect(folders([])).toEqual([]);
+  });
+});
+
+describe("workspaceFolder", () => {
+  const workspace = { workspace_id: "w1", label: "api · fix" };
+
+  test("a checkout's folder is its repository's root, shared with its worktrees", () => {
+    const worktree = { repo_root: "/src/api", repo_name: "api" };
+    expect(workspaceFolder({ ...workspace, worktree }, "/src/api-wt/feat")).toEqual({ key: "/src/api", name: "api" });
+  });
+
+  test("else the first pane's directory, named by its last folder", () => {
+    expect(workspaceFolder({ ...workspace, worktree: null }, "/Users/me/projects/backend/rx-infra")).toEqual({ key: "/Users/me/projects/backend/rx-infra", name: "rx-infra" });
+  });
+
+  test("with neither, the workspace is a folder of its own", () => {
+    expect(workspaceFolder(workspace, null)).toEqual({ key: "workspace:w1", name: "api · fix" });
   });
 });
 
