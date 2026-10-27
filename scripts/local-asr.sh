@@ -37,8 +37,8 @@ done
 # warm the model and the decoders a browser sends (Chrome webm/opus, Safari mp4/aac)
 warm="$(mktemp -d)"
 "$venv/bin/python" -c "import sys,wave; w=wave.open(sys.argv[1],'wb'); w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000); w.writeframes(b'\0\0'*16000); w.close()" "$warm/a.wav"
-ffmpeg -loglevel error -i "$warm/a.wav" -c:a libopus "$warm/a.webm"
-ffmpeg -loglevel error -i "$warm/a.wav" -c:a aac "$warm/a.mp4"
+ffmpeg -loglevel error -i "$warm/a.wav" -c:a libopus "$warm/a.webm" || true
+ffmpeg -loglevel error -i "$warm/a.wav" -c:a aac "$warm/a.mp4" || true
 for clip in "$warm"/a.*; do
   curl -sf -o /dev/null "http://127.0.0.1:$port/v1/audio/transcriptions" -F "file=@$clip" -F stream=true || echo "warmup failed: ${clip##*/}" >&2
 done
@@ -46,5 +46,5 @@ rm -rf "$warm"
 
 echo "Ready. In Ovis: Settings > Voice input > Speech recognition"
 echo "  Server URL: http://127.0.0.1:$port/v1"
-echo "  Model name: $model"
+echo "  Model name: any (this server has one model)"
 wait "$server"

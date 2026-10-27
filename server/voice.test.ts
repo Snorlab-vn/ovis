@@ -339,5 +339,15 @@ describe("voice on this machine and tidying elsewhere", () => {
     voice.update({ polish_base_url: "https://pool.example.com/v1", polish_api_key: POLISH_KEY });
     expect((await put(voice, { polish_base_url: "https://evil.example.com/v1" })).status).toBe(400);
     expect(voice.status().polish_base_url).toBe("https://pool.example.com/v1");
+    // clearing the server takes the key with it
+    expect(voice.update({ polish_base_url: null, polish_api_key: null })).toMatchObject({ polish_base_url: null, polish_key_set: false });
+    expect((await put(voice, { polish_api_key: POLISH_KEY })).status).toBe(400);
+  });
+
+  it("drops a saved key when it moves to a server on this machine", () => {
+    const voice = service();
+    voice.update({ api_key: KEY });
+    expect(voice.update({ base_url: "http://127.0.0.1:8765/v1", api_key: null })).toMatchObject({ configured: true, source: null });
+    expect(readFileSync(join(stateDir, "voice.json"), "utf8")).not.toContain(KEY);
   });
 });

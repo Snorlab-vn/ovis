@@ -289,9 +289,10 @@ export class VoiceService {
     // key again, so a client that can write settings cannot send someone's key elsewhere.
     if (change["base_url"] !== undefined) {
       if (text(this.env[ENV_KEY])) throw new VoiceError("key_from_env", 409, `${ENV_KEY} sets the key; its server is set by ${ENV_BASE_URL}`);
-      if (next.api_key && typeof change["api_key"] !== "string") throw invalid("Send api_key with base_url: a saved key is not sent to another server");
+      // a new key, or null: the saved one goes, so it is sent nowhere
+      if (next.api_key && change["api_key"] === undefined) throw invalid("Send api_key with base_url: a saved key is not sent to another server");
     }
-    if (change["polish_base_url"] !== undefined && next.polish_api_key && typeof change["polish_api_key"] !== "string") {
+    if (change["polish_base_url"] !== undefined && next.polish_api_key && change["polish_api_key"] === undefined) {
       throw invalid("Send polish_api_key with polish_base_url: a saved key is not sent to another server");
     }
     for (const field of FIELDS) {
@@ -303,6 +304,8 @@ export class VoiceService {
       if ((field === "api_key" || field === "polish_api_key") && /\s/.test(value.trim())) throw invalid(`${field} must not contain spaces`);
       next[field] = field === "base_url" || field === "polish_base_url" ? baseUrlOf(value) : value.trim();
     }
+    // without a server of its own, tidying uses the transcription key: a key of its own would be unused
+    if (next.polish_api_key && !next.polish_base_url) throw invalid("polish_api_key needs polish_base_url");
     writeJsonPrivate(this.path, next);
     return this.status();
   }

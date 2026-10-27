@@ -649,7 +649,8 @@ function VoicePage() {
               onSave={(base, model) => changeVoiceConfig({
                 ...(base !== voice.base_url ? { base_url: base || null } : {}),
                 ...(model !== voice.transcribe_model ? { transcribe_model: model || null } : {}),
-                ...(voiceKey.trim() ? { api_key: voiceKey.trim() } : {}),
+                // a saved key never follows the server elsewhere: moving without a new one drops it
+                ...(voiceKey.trim() ? { api_key: voiceKey.trim() } : base !== voice.base_url && voice.source === "file" ? { api_key: null } : {}),
               })} />
           )}
           {voice && voice.source !== "env" && (
@@ -721,7 +722,7 @@ function TidyForm({ voice, busy, onSave }: { voice: VoiceStatus; busy: boolean; 
           const saved = await onSave({
             ...(base !== (voice.polish_base_url ?? "") ? { polish_base_url: base || null } : {}),
             ...(model !== voice.polish_model ? { polish_model: model || null } : {}),
-            ...(key.trim() ? { polish_api_key: key.trim() } : {}),
+            ...(key.trim() ? { polish_api_key: key.trim() } : base !== (voice.polish_base_url ?? "") && voice.polish_key_set ? { polish_api_key: null } : {}),
           });
           if (saved) setKey("");
           return saved;
