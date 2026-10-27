@@ -109,7 +109,7 @@ Not scheduled; see the plan's backlog list.
 | B4 Unsent drafts kept on the server | todo | |
 | B5 Edit and resend for Codex / Cursor | later | |
 | B6 Voice: model kept warm, single-modifier dictation shortcut | done | Settings → Voice input → Dictation key: chord, Left or Right Option alone (held 250 ms, so Option+key keeps working); local ASR server runs 0.5 s of silence through the loaded model every minute, logs when it had been paged out |
-| B7 Close leaves the screen at the click | todo | |
+| B7 Close leaves the screen at the click | done | closes hide at the click (lib/closingItems.ts, every close goes through api.ts; a refusal shows it again; a group close hides its worktrees too); a tab move shows its order at once (useTabReorder `order`). Workspace and folder drags were already instant. Still waiting on herdr: a pane swap, a tab dragged to another workspace |
 | B8 Paste `.gitignore` | done upstream | `server/paste.ts` preparePasteDirectory |
 | B9 Settings restart rows | later | Ovis has no restart rows yet |
 

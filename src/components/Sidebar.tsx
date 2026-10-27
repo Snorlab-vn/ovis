@@ -1,4 +1,5 @@
 import { Fragment, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type AnimationEvent, type DragEvent, type KeyboardEvent, type MouseEvent } from "react";
+import { closeAtOnce } from "../lib/closingItems.ts";
 import { Bell, BellOff, ChevronDown, ChevronRight, Ellipsis, Folder, FolderOpen, GitBranch, History, Layers, ListChecks, Pencil, Pin, PinOff, Plus, Terminal, Trash2, TriangleAlert, X } from "lucide-react";
 
 import "./Sidebar.css";
@@ -584,7 +585,8 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions, watching = 
           : (worktrees.length === 1 ? "{n} panes and {m} worktree workspace close with it; the agents in them stop, and the checkout stays." : "{n} panes and {m} worktree workspaces close with it; the agents in them stop, and the checkouts stay."), { n: paneCount, m: worktrees.length })
         : t(paneCount === 1 ? "{n} pane closes with it, and the agent in it stops." : "{n} panes close with it, and the agents in them stop.", { n: paneCount }))
         + (otherHeads ? ` ${t("The other workspaces open on this repository's main checkout close too.")}` : ""),
-      run: () => leave(() => closeWorkspace(workspace.workspace_id, sameRepo.length > 0)),
+      // the repository's other workspaces leave the list at the click with it (lib/closingItems.ts)
+      run: () => leave(() => sameRepo.reduce<() => Promise<void>>((close, other) => () => closeAtOnce(machineId, "workspace", other.workspace_id, close), () => closeWorkspace(workspace.workspace_id, sameRepo.length > 0))()),
     }) };
     // One native workspace menu for both the pointer and the explicit ⋯ button.
     const folded = repoKey !== undefined && worktreesFolded(repoKey, worktrees);

@@ -14,7 +14,10 @@ export interface TabDragOut {
   cancel: () => void;
 }
 
-/** A drag previews only an insertion line. Herdr's next snapshot owns the actual order. */
+/**
+ * A drag previews an insertion line; a move shows its order at once (`order`, Tasky's), held until
+ * herdr's snapshot has it, and dropped when herdr refuses. Herdr's snapshot owns the order after that.
+ */
 export function useTabReorder({ owner, tabs, strip, moveTab, failed, stale, outside }: {
   owner: string;
   tabs: HerdrTab[];
@@ -26,6 +29,8 @@ export function useTabReorder({ owner, tabs, strip, moveTab, failed, stale, outs
 }) {
   const [drag, setDrag] = useState<Drag | null>(null);
   const [moving, setMoving] = useState(false);
+  /** the order a sent move makes, shown until it settles */
+  const [order, setOrder] = useState<string[] | null>(null);
   const ids = tabs.map((tab) => tab.tab_id);
   const key = JSON.stringify(ids);
   const current = useRef({ owner, key, ids, moveTab, failed, stale, outside });
@@ -49,6 +54,7 @@ export function useTabReorder({ owner, tabs, strip, moveTab, failed, stale, outs
     if (op.timer !== undefined) window.clearTimeout(op.timer);
     operation.current = null;
     setMoving(false);
+    setOrder(null);
   };
   useLayoutEffect(() => {
     return () => {
@@ -72,8 +78,10 @@ export function useTabReorder({ owner, tabs, strip, moveTab, failed, stale, outs
   }, [owner]);
 
   const requestMove = (tabId: string, boundary: number): void => {
-    if (operation.current || !movedTabOrder(current.current.ids, tabId, boundary)) return;
+    const next = operation.current ? null : movedTabOrder(current.current.ids, tabId, boundary);
+    if (next === null) return;
     cancelDrag();
+    setOrder(next);
     const saved = current.current;
     const op: Operation = { expected: null, settled: false };
     operation.current = op;
@@ -171,6 +179,6 @@ export function useTabReorder({ owner, tabs, strip, moveTab, failed, stale, outs
     return () => { window.removeEventListener("keydown", escape, true); window.removeEventListener("blur", cancelDrag); };
   }, [drag?.tabId]);
 
-  return { drag, moving, moveAdjacent, cancelDrag, onPointerDown, onPointerMove, onPointerUp,
+  return { drag, moving, order, moveAdjacent, cancelDrag, onPointerDown, onPointerMove, onPointerUp,
     consumeClick: (detail: number): boolean => { const suppress = detail !== 0 && suppressClick.current; suppressClick.current = false; return suppress; } };
 }

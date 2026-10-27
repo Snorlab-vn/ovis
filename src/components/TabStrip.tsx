@@ -397,7 +397,8 @@ export function TabStrip({ snapshot, workspace, selectedPane, onSelectPane, onNe
       <div ref={strip} className="tab-strip" role="tablist" aria-label={t("Tabs of {workspace}", { workspace: workspace.label })} aria-busy={reorder.moving} onKeyDown={onKeyDown} onScroll={onScroll}
         onFocus={(event) => { if (event.target.getAttribute("role") === "tab") focusedTab.current = event.target; }}
         onBlur={(event) => { if (event.relatedTarget !== null) focusedTab.current = null; }}>
-        {tabs.map((tab, index) => {
+        {/* a sent move shows its order at once; a tab that came meanwhile keeps its place at the end */}
+        {(reorder.order ? [...reorder.order.flatMap((id) => tabs.filter((tab) => tab.tab_id === id)), ...tabs.filter((tab) => !reorder.order!.includes(tab.tab_id))] : tabs).map((tab, index) => {
           const active = tab.tab_id === selectedPane.tab_id;
           const own = panesOf(tab);
           // Settle each pane's wait before rolling up, so a sibling's RUN or DONE stays visible.

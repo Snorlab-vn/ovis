@@ -1,4 +1,5 @@
 import { apiFetch as fetch } from "./api-request-id.ts";
+import { closeAtOnce } from "./closingItems.ts";
 import type { SshOpened, TailnetPeers } from "../../shared/connections.ts";
 import type { AgentProfile } from "../../shared/agents.ts";
 import type { NextPrompts } from "../../shared/protocol.ts";
@@ -562,7 +563,7 @@ export async function fetchPaneSelection(paneId: string, anchor: PaneTextPoint, 
  * a failure (e.g. the pane already gone) throws ApiError and the 5s poll reconciles.
  */
 export async function closePane(paneId: string, machineId = "local"): Promise<void> {
-  await sendJson(machinePath(machineId, "pane/close"), "POST", { pane_id: paneId });
+  await closeAtOnce(machineId, "pane", paneId, () => sendJson(machinePath(machineId, "pane/close"), "POST", { pane_id: paneId }));
 }
 
 /** POST /api/pane/focus: herdr brings this pane and its tab/workspace to the front. */
@@ -831,7 +832,7 @@ export async function moveTabToWorkspace(tabId: string, workspaceId: string, mac
 
 /** POST /api/tab/close: the tab and every pane in it; a workspace's last tab takes the workspace with it. */
 export async function closeTab(tabId: string, machineId = "local"): Promise<void> {
-  await sendJson(machinePath(machineId, "tab/close"), "POST", { tab_id: tabId });
+  await closeAtOnce(machineId, "tab", tabId, () => sendJson(machinePath(machineId, "tab/close"), "POST", { tab_id: tabId }));
 }
 
 export async function renameWorkspace(workspaceId: string, label: string, machineId = "local"): Promise<void> {
@@ -849,7 +850,7 @@ export async function moveWorkspace(workspaceId: string, insertIndex: number, ma
 
 /** closeGroup takes the repository's open worktree workspaces with it; herdr refuses to close over them otherwise. */
 export async function closeWorkspace(workspaceId: string, machineId = "local", closeGroup = false): Promise<void> {
-  await sendJson(machinePath(machineId, "workspace/close"), "POST", { workspace_id: workspaceId, ...(closeGroup ? { close_group: true } : {}) });
+  await closeAtOnce(machineId, "workspace", workspaceId, () => sendJson(machinePath(machineId, "workspace/close"), "POST", { workspace_id: workspaceId, ...(closeGroup ? { close_group: true } : {}) }));
 }
 
 /** POST /api/worktree/remove: deletes the checkout and closes its workspace; the branch stays. */

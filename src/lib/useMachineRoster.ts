@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState, type Dispatch, type RefObject, type SetStateAction } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type Dispatch, type RefObject, type SetStateAction } from "react";
+import { closingVersion, settleClosing, subscribeClosing, withoutClosing } from "./closingItems.ts";
 import type { DevicePairedEvent, Machine, MachineEvent } from "../../shared/machines.ts";
 import { ApiError, authenticate, fetchMachines, verifySourceBoot } from "./api.ts";
 import { passingFolder, recentDirectories } from "./recent-directories.ts";
@@ -34,7 +35,11 @@ export function sameData(a: unknown, b: unknown): boolean {
 const REFETCH_DEBOUNCE_MS = 500;
 
 export function useRosterState() {
-  const [machines, setMachines] = useState<Machine[]>([]);
+  const [rosters, setMachines] = useState<Machine[]>([]);
+  // what is being closed leaves at the click (lib/closingItems.ts); a roster without it settles the close
+  const closing = useSyncExternalStore(subscribeClosing, closingVersion, closingVersion);
+  useEffect(() => settleClosing(rosters), [rosters]);
+  const machines = useMemo(() => withoutClosing(rosters, closing), [rosters, closing]);
   const [machineRosterLoaded, setMachineRosterLoaded] = useState(false);
   return { machines, setMachines, machineRosterLoaded, setMachineRosterLoaded };
 }
