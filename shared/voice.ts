@@ -16,18 +16,25 @@ export interface VoiceStatus {
   base_url: string;
   transcribe_model: string;
   polish_model: string;
+  /** where tidying goes: its own OpenAI-compatible root, or null for the transcription one */
+  polish_base_url: string | null;
+  /** a key of its own is saved for polish_base_url */
+  polish_key_set: boolean;
 }
 
 /**
  * PUT /api/voice/config. A missing field is left as it is; `api_key: null` removes the key.
  * `base_url` changes only together with `api_key` while a key is saved, and never while the env
- * sets the key: a key is not sent to a server other than the one it was saved for.
+ * sets the key: a key is not sent to a server other than the one it was saved for. The same holds
+ * for `polish_base_url` and `polish_api_key`.
  */
 export interface VoiceConfigUpdate {
   api_key?: string | null;
   base_url?: string | null;
   transcribe_model?: string | null;
   polish_model?: string | null;
+  polish_base_url?: string | null;
+  polish_api_key?: string | null;
 }
 
 /**
@@ -43,7 +50,7 @@ export type VoiceEvent =
   | { type: "error"; code: VoiceErrorCode; message: string };
 
 export type VoiceErrorCode =
-  | "voice_not_configured" // 409: no key on the server
+  | "voice_not_configured" // 409: no key on the server, and its base_url is not on this machine
   | "key_from_env" // 409: PUT tried to change the key or base_url while OVIS_OPENAI_API_KEY sets the key
   | "audio_too_large" // 413
   | "invalid_audio" // 400: no audio part, empty, or not audio/*

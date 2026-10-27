@@ -84,6 +84,7 @@ describe("voice config", () => {
     expect(response.headers.get("cache-control")).toBe("no-store");
     expect(await response.json()).toEqual({
       configured: false, source: null, base_url: "https://api.openai.com/v1", transcribe_model: "gpt-transcribe", polish_model: "gpt-6-luna",
+      polish_base_url: null, polish_key_set: false,
     } satisfies VoiceStatus);
   });
 
@@ -291,5 +292,52 @@ describe("voice transcribe", () => {
       { type: "delta", text: "안녕" },
       { type: "error", code: "provider_error", message: "server_error" },
     ]);
+  });
+});
+
+describe("voice on this machine and tidying elsewhere", () => {
+  const LOCAL = "http://127.0.0.1:8765/v1";
+  const POLISH_KEY = "sk-polish-0123456789";
+
+  it("transcribes through a server on this machine without a key", async () => {
+    handler = transcriptAnswer;
+    const voice = service();
+    expect(voice.update({ base_url: LOCAL })).toMatchObject({ configured: true, source: null, base_url: LOCAL });
+    expect((await events(await transcribe(voice, clipForm()))).at(-1)).toEqual({ type: "done", text: DELTAS.join("") });
+    expect(requests[0]!.url).toBe(`${LOCAL}/audio/transcriptions`);
+    expect(new Headers(requests[0]!.init.headers).has("authorization")).toBe(false);
+  });
+
+  it("still asks for a key when the server is not on this machine", async () => {
+    const voice = service();
+    expect(voice.update({ base_url: "https://asr.example.com/v1" }).configured).toBe(false);
+    expect((await transcribe(voice, clipForm())).status).toBe(409);
+  });
+
+  it("tidies at its own server with its own key and the keywords, never with the transcription key", async () => {
+    let polish: { url: string; auth: string | null; body: { model: string; messages: Array<{ content: string }> } } | null = null;
+    handler = (url, init) => {
+      if (url.endsWith("/audio/transcriptions")) return transcriptAnswer();
+      polish = { url, auth: new Headers(init.headers).get("authorization"), body: JSON.parse(String(init.body)) };
+      return Response.json({ choices: [{ message: { content: "tidy" } }] });
+    };
+    const voice = service({ OVIS_OPENAI_API_KEY: KEY });
+    expect(voice.update({ polish_base_url: "https://pool.example.com/v1", polish_api_key: POLISH_KEY, polish_model: "claude-haiku-5-5" }))
+      .toMatchObject({ polish_base_url: "https://pool.example.com/v1", polish_key_set: true, polish_model: "claude-haiku-5-5" });
+    const keywords = JSON.stringify(["server/voice.ts"]);
+    expect((await events(await transcribe(voice, clipForm({ polish: "1", keywords })))).at(-1)).toEqual({ type: "polished", text: "tidy" });
+    expect(polish!.url).toBe("https://pool.example.com/v1/chat/completions");
+    expect(polish!.auth).toBe(`Bearer ${POLISH_KEY}`);
+    expect(polish!.body).toMatchObject({ model: "claude-haiku-5-5" });
+    expect("temperature" in polish!.body || "reasoning_effort" in polish!.body).toBe(false);
+    expect(polish!.body.messages[0]!.content).toContain("server/voice.ts");
+    expect(JSON.stringify(voice.status())).not.toContain(POLISH_KEY);
+  });
+
+  it("never sends a saved tidying key to another server", async () => {
+    const voice = service();
+    voice.update({ polish_base_url: "https://pool.example.com/v1", polish_api_key: POLISH_KEY });
+    expect((await put(voice, { polish_base_url: "https://evil.example.com/v1" })).status).toBe(400);
+    expect(voice.status().polish_base_url).toBe("https://pool.example.com/v1");
   });
 });

@@ -12,6 +12,25 @@ bun run dev      # Vite on :5173, proxies /api and /ws
 
 `bun run server` and `bun run dev` never update themselves; only `bun run start` and the plugin run the update supervisor.
 
+## Local voice input
+
+On Apple Silicon, dictation can run on this PC with Qwen3-ASR instead of OpenAI. Needs `uv` and
+`ffmpeg` (`brew install uv ffmpeg`):
+
+```bash
+scripts/local-asr.sh   # first run: makes ~/.local/share/ovis-asr and fetches the model (~700 MB)
+```
+
+It serves `http://127.0.0.1:8765/v1` on loopback (`OVIS_ASR_PORT` changes the port), warms the
+model and the webm/mp4 decoders, then prints what to enter in Settings > Voice input > Speech
+recognition: that Server URL and the model path as Model name. A server on this PC takes no key,
+and the audio stays here. A clip comes back in about 0.2 s once warm.
+
+Tidying (the "Tidy dictated text" toggles) may use a provider of its own under Tidying server:
+any OpenAI-compatible `/chat/completions` root, its key and a model such as `claude-haiku-5-5`.
+It also corrects technical terms the recognizer misheard. Left empty, it uses the speech
+recognition server and its key.
+
 ## Connection diagnostics
 
 Transport failures write one JSON line to the server's standard error, with an ISO timestamp,
