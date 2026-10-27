@@ -56,6 +56,7 @@ try {
         locale: "en-US",
       });
       await context.addInitScript(() => localStorage.removeItem("ovis:pc-collapsed:local"));
+      await context.addInitScript(() => localStorage.setItem("ovis:settings", JSON.stringify({ sidebarLayout: "workspaces" })));
       const page = await context.newPage();
       await page.goto(`http://127.0.0.1:${server.port}/app/`);
       await page.locator(".conn-live").waitFor({ state: "attached" });

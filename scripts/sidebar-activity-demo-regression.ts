@@ -268,7 +268,7 @@ async function withPage(browser: Browser, settings: object, run: (page: Page) =>
   });
   try {
     await context.addInitScript((stored) => {
-      localStorage.setItem("ovis:settings", JSON.stringify({ language: "en", defaultView: "chat", ...stored }));
+      localStorage.setItem("ovis:settings", JSON.stringify({ sidebarLayout: "workspaces", language: "en", defaultView: "chat", ...stored }));
     }, settings);
     const page = await context.newPage();
     const errors: string[] = [];

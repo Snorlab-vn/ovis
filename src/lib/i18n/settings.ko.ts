@@ -343,4 +343,6 @@ export const SETTINGS_KO: Record<string, string> = {
   "Sidebar layout": "사이드바 구성",
   "By folder": "폴더별",
   "By folder groups workspaces by folder with their agents under them; Workspaces keeps the list and the Agents list": "폴더별은 작업 공간을 폴더로 묶고 그 아래에 에이전트를 둡니다. 워크스페이스순은 목록과 에이전트 목록을 그대로 둡니다",
+  "Agents list": "에이전트 목록",
+  "Auto shows it with the workspace list and leaves it out of the folder tree, which lists each workspace's agents": "자동은 워크스페이스 목록에서는 보여 주고, 각 워크스페이스의 에이전트를 나열하는 폴더 트리에서는 숨깁니다",
 };

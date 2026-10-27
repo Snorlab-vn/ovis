@@ -142,7 +142,7 @@ try {
   browser = await chromium.launch({ executablePath: chromePath(), headless: true });
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   await context.addInitScript(() => {
-    if (localStorage.getItem("ovis:settings") === null) localStorage.setItem("ovis:settings", JSON.stringify({ language: "en", alertsOn: false }));
+    if (localStorage.getItem("ovis:settings") === null) localStorage.setItem("ovis:settings", JSON.stringify({ sidebarLayout: "workspaces", language: "en", alertsOn: false }));
   });
   const errors: string[] = [];
   const { page, socket } = await newPage(context, `${origin}/?pane=${encodeURIComponent(one)}`, errors);
@@ -239,7 +239,7 @@ try {
   await server.stop();
   server = createServer({ hostname: "127.0.0.1", port, stateDir: join(root, "web"), token: "", herdrIdentity: () => null });
   const older = await browser.newContext({ viewport: { width: 1280, height: 800 } });
-  await older.addInitScript(() => { localStorage.setItem("ovis:settings", JSON.stringify({ language: "en", alertsOn: false })); });
+  await older.addInitScript(() => { localStorage.setItem("ovis:settings", JSON.stringify({ sidebarLayout: "workspaces", language: "en", alertsOn: false })); });
   const legacy = await newPage(older, `${origin}/?pane=${encodeURIComponent(one)}`, errors);
   await select(legacy.page, one);
   await chatButton(legacy.page).click();

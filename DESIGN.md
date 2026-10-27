@@ -1020,6 +1020,19 @@ Alert rows of the table above from the `--droplet-*` roles in `src/styles.css`.
   rather than another app's policy; at `<=480px` both go with the other header pills.
 
 ### Sidebar roster row and footer
+- **Folder tree** (Settings → Appearance → **Sidebar layout**: **By folder**, the default; **Workspaces**
+  is the list as it was). Each PC lists folders (`.sidebar-folder`, Sidebar.tsx), as the Codex app lists
+  threads under their project: a folder is a repository's root when herdr reports a checkout (its
+  worktrees share it), else the workspace's first pane's directory (`workspaceFolder`,
+  lib/workspaceOrder.ts), and stands where its first workspace does in herdr's order. Its row
+  (`.sidebar-folder-header`, `--side-row`) leads with a chevron and an open or closed folder, the
+  name in `--text-dim` at `--fs-sm`, and folded, the count (`.workspace-fold-count`) and the rolled-up
+  state of its panes; its fold is saved per PC with the worktree folds, and a folded folder keeps the
+  open workspace in view. Workspaces sit one indent in; a workspace of several panes lists them
+  under it (`.workspace-panes`), one indent further, each the Agents list's row on one line
+  (`AgentRowBody`), its ⋯ offering **Mute alerts**; the selection fills the pane's row only. A
+  workspace's drag and Alt+↑/↓ stay in its folder; a folder's row drags its workspaces as one block.
+  **Agents list** (Auto, On, Off) shows the separate list; Auto leaves it out of the folder tree.
 - No top bar. The sidebar opens with the plan panel (when Settings puts it there), the PC workspace groups and a separate **Agents** list spanning the connected PCs. A workspace starts from the `+` on its PC's header, or from the **New workspace**
   button in the dashed **No workspaces yet** box of an empty PC. **Add PC** lives in Settings →
   Remote PCs and in the command palette. Search, as in finding anything and acting on it (panes by

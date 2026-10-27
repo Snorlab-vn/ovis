@@ -370,6 +370,9 @@ function AppearancePage() {
       <SettingsRow label={t("Sidebar layout")} description={t("By folder groups workspaces by folder with their agents under them; Workspaces keeps the list and the Agents list")} wide>
         <Segmented label={t("Sidebar layout")} value={settings.sidebarLayout} onChange={(sidebarLayout) => update({ sidebarLayout })} options={[{ value: "folders", label: t("By folder") }, { value: "workspaces", label: t("Workspaces") }]} />
       </SettingsRow>
+      <SettingsRow label={t("Agents list")} description={t("Auto shows it with the workspace list and leaves it out of the folder tree, which lists each workspace's agents")} wide>
+        <Segmented label={t("Agents list")} value={settings.agentsList} onChange={(agentsList) => update({ agentsList })} options={[{ value: "auto", label: t("Auto") }, { value: "on", label: t("On") }, { value: "off", label: t("Off") }]} />
+      </SettingsRow>
       <SettingsRow label={t("Agents order")} description={t("Activity keeps a waiting agent on top, then the one that changed last; herdr's own order is not changed")} wide>
         <Segmented label={t("Agents order")} value={settings.agentOrder} onChange={(agentOrder) => update({ agentOrder })} options={[{ value: "workspace", label: t("Workspaces") }, { value: "activity", label: t("Activity") }]} />
       </SettingsRow>

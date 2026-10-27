@@ -95,7 +95,7 @@ try {
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   await context.addInitScript((ids) => {
     // only the first load: a reload must keep what Settings stored, such as the language
-    if (!localStorage.getItem("ovis:settings")) localStorage.setItem("ovis:settings", JSON.stringify({ language: "en" }));
+    if (!localStorage.getItem("ovis:settings")) localStorage.setItem("ovis:settings", JSON.stringify({ sidebarLayout: "workspaces", language: "en" }));
     for (const id of ids) localStorage.setItem(`ovis:view:${id}`, "chat");
   }, panes);
   // A hook for a check that changes the roster on a page already loaded: a route cannot reach the
@@ -424,7 +424,7 @@ try {
   const offlineContext = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   let offlineEvidence: BrowserEvidenceSession | undefined;
   try {
-    await offlineContext.addInitScript(() => localStorage.setItem("ovis:settings", JSON.stringify({ language: "en", alertsOn: false })));
+    await offlineContext.addInitScript(() => localStorage.setItem("ovis:settings", JSON.stringify({ sidebarLayout: "workspaces", language: "en", alertsOn: false })));
     await offlineContext.route("**/api/machines", (route) => route.fulfill({ json: { machines: offlineMachines } }));
     await offlineContext.route("**/api/machines/events", (route) => route.fulfill({
       contentType: "text/event-stream", body: `retry: 60000\ndata: ${JSON.stringify({ type: "machines", machines: offlineMachines })}\n\n`,
@@ -883,7 +883,7 @@ try {
   // where notifications are blocked the item is still there, and switches the in-app alerts
   const blocked = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   await blocked.addInitScript(() => {
-    if (!localStorage.getItem("ovis:settings")) localStorage.setItem("ovis:settings", JSON.stringify({ language: "en" }));
+    if (!localStorage.getItem("ovis:settings")) localStorage.setItem("ovis:settings", JSON.stringify({ sidebarLayout: "workspaces", language: "en" }));
     Object.defineProperty(Notification, "permission", { configurable: true, get: () => "denied" });
   });
   const blockedPage = await blocked.newPage();
@@ -2214,7 +2214,7 @@ try {
   // a phone: the composer's chip shows the plan's count on the status line's one row, and its steps
   // open above the card without making the page scroll sideways
   const planPhone = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
-  await planPhone.addInitScript(() => localStorage.setItem("ovis:settings", JSON.stringify({ language: "en", defaultView: "chat" })));
+  await planPhone.addInitScript(() => localStorage.setItem("ovis:settings", JSON.stringify({ sidebarLayout: "workspaces", language: "en", defaultView: "chat" })));
   const phone = await planPhone.newPage();
   phone.on("pageerror", (error) => errors.push(error.message));
   const unroutePhonePlanned = await planned(phone, { events: true });

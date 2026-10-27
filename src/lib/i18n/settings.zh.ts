@@ -343,4 +343,6 @@ export const SETTINGS_ZH: Record<string, string> = {
   "Sidebar layout": "侧边栏布局",
   "By folder": "按文件夹",
   "By folder groups workspaces by folder with their agents under them; Workspaces keeps the list and the Agents list": "按文件夹将工作区按文件夹归组，并把代理放在其下；工作区保留列表和代理列表",
+  "Agents list": "代理列表",
+  "Auto shows it with the workspace list and leaves it out of the folder tree, which lists each workspace's agents": "自动：在工作区列表中显示，在已列出各工作区代理的文件夹树中隐藏",
 };

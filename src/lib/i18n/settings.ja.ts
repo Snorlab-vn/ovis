@@ -343,4 +343,6 @@ export const SETTINGS_JA: Record<string, string> = {
   "Sidebar layout": "サイドバーの構成",
   "By folder": "フォルダー別",
   "By folder groups workspaces by folder with their agents under them; Workspaces keeps the list and the Agents list": "フォルダー別はワークスペースをフォルダーごとにまとめ、その下にエージェントを置きます。ワークスペースは一覧とエージェント一覧のままです",
+  "Agents list": "エージェント一覧",
+  "Auto shows it with the workspace list and leaves it out of the folder tree, which lists each workspace's agents": "自動はワークスペース一覧では表示し、各ワークスペースのエージェントを並べるフォルダーツリーでは省きます",
 };

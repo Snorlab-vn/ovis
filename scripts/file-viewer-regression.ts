@@ -171,7 +171,7 @@ try {
   await page.addInitScript(() => {
     // the app's own document only: a sandboxed HTML page the viewer frames has no storage to seed
     if (window.top !== window) return;
-    if (localStorage.getItem("ovis:settings") === null) localStorage.setItem("ovis:settings", JSON.stringify({ language: "en", chatFontSize: 17, chatFontFamily: "Georgia", fileOpen: "panel" }));
+    if (localStorage.getItem("ovis:settings") === null) localStorage.setItem("ovis:settings", JSON.stringify({ sidebarLayout: "workspaces", language: "en", chatFontSize: 17, chatFontFamily: "Georgia", fileOpen: "panel" }));
     const record = window as unknown as { longTasks: number[] };
     record.longTasks = [];
     new PerformanceObserver((list) => { for (const entry of list.getEntries()) record.longTasks.push(entry.duration); }).observe({ type: "longtask" });
@@ -1120,7 +1120,7 @@ try {
   for (const width of [390, 1440]) {
     for (const theme of ["dark", "light"]) {
       const context = await browser.newContext({ viewport: { width, height: 900 }, isMobile: width === 390, hasTouch: width === 390 });
-      await context.addInitScript((theme) => localStorage.setItem("ovis:settings", JSON.stringify({ language: "en", theme })), theme);
+      await context.addInitScript((theme) => localStorage.setItem("ovis:settings", JSON.stringify({ sidebarLayout: "workspaces", language: "en", theme })), theme);
       const page = await context.newPage();
       page.setDefaultTimeout(10_000);
       await page.goto(`${origin}/?pane=${encodeURIComponent(pane)}&file=${encodeURIComponent(markdownPath)}`);
@@ -1269,7 +1269,7 @@ try {
     const ownerContext = await browser.newContext();
     const fileRequests: string[] = [];
     await ownerContext.addInitScript(({ stored, pane }) => {
-      localStorage.setItem("ovis:settings", JSON.stringify({ language: "en" }));
+      localStorage.setItem("ovis:settings", JSON.stringify({ sidebarLayout: "workspaces", language: "en" }));
       sessionStorage.setItem("ovis:selection", JSON.stringify({ machine_id: stored, pane_id: pane }));
     }, { stored: target === "local" ? "remote-fixture" : "local", pane });
     const unrouteOwner = await routeDrained(ownerContext, "**/api/**", async (route) => {

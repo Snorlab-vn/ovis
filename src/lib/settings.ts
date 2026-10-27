@@ -25,6 +25,8 @@ export type Density = "compact" | "comfortable";
 export type SidebarRows = "one" | "two";
 /** Folders: a tree of PC, folder, workspace and its panes; Workspaces: the flat workspace list with the Agents list under it. */
 export type SidebarLayout = "folders" | "workspaces";
+/** The Agents list under the PCs: auto shows it beside the workspace list and leaves it out of the folder tree, which lists the agents itself. */
+export type AgentsList = "auto" | "on" | "off";
 /** the Agents list's order: herdr's workspace order, or a waiting agent first and then the latest change */
 export type AgentOrder = "workspace" | "activity";
 /** how agent logos are drawn: in their brand colors, or without color: Claude's in the text color, the others in grey (data-marks on <html>) */
@@ -77,6 +79,8 @@ export interface Settings {
   sidebarRows: SidebarRows;
   /** The sidebar's shape: the folder tree, or the workspace list and the Agents list. */
   sidebarLayout: SidebarLayout;
+  /** Whether the Agents list is drawn: auto follows the sidebar layout. */
+  agentsList: AgentsList;
   /** The Agents list's order. Activity is display-only: herdr's own order never changes. */
   agentOrder: AgentOrder;
   /** Agent logos: brand colors, or without color, so a list of one agent is not a stripe of tiles */
@@ -202,7 +206,7 @@ export type DiffStyle = (typeof DIFF_STYLES)[number];
 type TelemetrySourceSettings = Omit<Settings,
   "keyBarExtras" | "keyBarItems" | "shortcutOverrides" | "terminalFontFamily" | "chatFontFamily" | "uiFontFamily"
   | "quickReplies" | "usageOrder" | "usageHidden" | "fileOpen" | "webLinks" | "claudeLaunchMode" | "codexLaunchMode"
-  | "followHerdrFocus" | "composerNewTabButton" | "terminalMirrorWrap" | "sidebarLayout">;
+  | "followHerdrFocus" | "composerNewTabButton" | "terminalMirrorWrap" | "sidebarLayout" | "agentsList">;
 
 /** Compare structured custom settings by content against this app's built-in defaults. */
 function differsFromDefault(value: unknown, defaultValue: unknown): boolean {
@@ -272,7 +276,7 @@ export function telemetrySettingsSnapshot(settings: Settings): TelemetrySettings
  * must be placed here, or the build fails; when in doubt it is the device's.
  */
 export const SETTING_SCOPE = {
-  theme: "shared", palette: "shared", darkTheme: "shared", lightTheme: "shared", language: "shared", sidebarRows: "shared", sidebarLayout: "shared", agentOrder: "shared",
+  theme: "shared", palette: "shared", darkTheme: "shared", lightTheme: "shared", language: "shared", sidebarRows: "shared", sidebarLayout: "shared", agentsList: "shared", agentOrder: "shared",
   agentMarks: "shared", autoSendQueued: "shared", showThinking: "shared", quickReplies: "shared",
   showQuickReplies: "shared", showUsage: "shared", usageCount: "shared",
   usageGlance: "shared", usageOrder: "shared", usageHidden: "shared", defaultView: "device", suggestionChip: "device",
@@ -309,6 +313,7 @@ export const DEFAULT_SETTINGS: Settings = {
   density: "comfortable",
   sidebarRows: "one",
   sidebarLayout: "folders",
+  agentsList: "auto",
   agentOrder: "workspace",
   agentMarks: "color",
   statusIndicators: "classic",
@@ -483,6 +488,7 @@ export function sanitizeSettings(raw: unknown): Settings {
     density: density === "compact" || density === "comfortable" ? density : DEFAULT_SETTINGS.density,
     sidebarRows: record["sidebarRows"] === "one" || record["sidebarRows"] === "two" ? record["sidebarRows"] : DEFAULT_SETTINGS.sidebarRows,
     sidebarLayout: record["sidebarLayout"] === "folders" || record["sidebarLayout"] === "workspaces" ? record["sidebarLayout"] : DEFAULT_SETTINGS.sidebarLayout,
+    agentsList: record["agentsList"] === "auto" || record["agentsList"] === "on" || record["agentsList"] === "off" ? record["agentsList"] : DEFAULT_SETTINGS.agentsList,
     agentOrder: record["agentOrder"] === "workspace" || record["agentOrder"] === "activity" ? record["agentOrder"] : DEFAULT_SETTINGS.agentOrder,
     agentMarks: record["agentMarks"] === "color" || record["agentMarks"] === "mono" ? record["agentMarks"] : DEFAULT_SETTINGS.agentMarks,
     statusIndicators: record["statusIndicators"] === "classic" || record["statusIndicators"] === "dots" || record["statusIndicators"] === "symbols" ? record["statusIndicators"] : DEFAULT_SETTINGS.statusIndicators,

@@ -227,7 +227,7 @@ async function newPage(browser: Browser, scene: Scene, search: string, stored: R
   await context.addInitScript(({ settings, stored }) => {
     localStorage.setItem("ovis:settings", JSON.stringify(settings));
     for (const [key, value] of Object.entries(stored)) localStorage.setItem(key, value);
-  }, { settings: { language: scene.language, theme: scene.theme, defaultView: "chat" }, stored });
+  }, { settings: { sidebarLayout: "workspaces", language: scene.language, theme: scene.theme, defaultView: "chat" }, stored });
   const page = await context.newPage();
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));

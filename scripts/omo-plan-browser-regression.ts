@@ -169,7 +169,7 @@ try {
       const context = await browser.newContext({ viewport: { width, height: 844 }, isMobile: width === 390, hasTouch: width === 390, colorScheme: theme, locale: "en-US" });
       try {
         await context.addInitScript(({ paneId, theme }) => {
-          localStorage.setItem("ovis:settings", JSON.stringify({ language: "en", theme }));
+          localStorage.setItem("ovis:settings", JSON.stringify({ sidebarLayout: "workspaces", language: "en", theme }));
           localStorage.setItem(`ovis:view:${paneId}`, "chat");
         }, { paneId, theme });
         const page = await context.newPage();
@@ -209,7 +209,7 @@ try {
     const pages: Array<{ page: Page; what: string }> = [];
     for (const [context, what, theme] of [[desktop, "1280px dark", "dark"], [phone, "390px light", "light"]] as const) {
       await context.addInitScript(({ paneId, theme }) => {
-        localStorage.setItem("ovis:settings", JSON.stringify({ language: "en", theme }));
+        localStorage.setItem("ovis:settings", JSON.stringify({ sidebarLayout: "workspaces", language: "en", theme }));
         localStorage.setItem(`ovis:view:${paneId}`, "chat");
       }, { paneId, theme });
       const page = await context.newPage();

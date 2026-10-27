@@ -62,7 +62,7 @@ const selection = (page: Page): Promise<string | null> => page.evaluate(() => JS
 async function open(browser: Browser, width: number, query: string): Promise<{ page: Page; errors: string[]; phone: boolean; close: () => Promise<void> }> {
   const phone = width <= 480;
   const context = await browser.newContext({ viewport: { width, height: phone ? 844 : 900 }, locale: "en-US", hasTouch: phone, isMobile: phone });
-  await context.addInitScript(() => { if (localStorage.getItem("ovis:settings") === null) localStorage.setItem("ovis:settings", JSON.stringify({ language: "en" })); });
+  await context.addInitScript(() => { if (localStorage.getItem("ovis:settings") === null) localStorage.setItem("ovis:settings", JSON.stringify({ sidebarLayout: "workspaces", language: "en" })); });
   const page = await context.newPage();
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
