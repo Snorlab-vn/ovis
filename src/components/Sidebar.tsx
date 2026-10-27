@@ -740,7 +740,7 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions, watching = 
     moveVisible(workspaceId, event.key === "ArrowUp" ? -1 : 1);
   };
 
-  const renderWorkspaceRow = (workspace: WorkspaceInfo, children: WorkspaceInfo[] = [], nested = false, drop?: "before" | "after") => {
+  const renderWorkspaceRow = (workspace: WorkspaceInfo, children: WorkspaceInfo[] = [], nested = false, drop?: "before" | "after", withPanes = true) => {
     const panes = roster.filter((pane) => pane.workspace_id === workspace.workspace_id);
     if (panes.length === 0) return null;
     const pane = currentPane(workspace, panes);
@@ -802,7 +802,10 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions, watching = 
           aria-expanded={!collapsed}
           aria-controls={contentsId}
           onClick={() => toggleWorktrees(repoKey, collapsed)}
-        >{face}<span className="workspace-toggle-fold" aria-hidden="true">{collapsed ? <Folder /> : <FolderOpen />}</span></button> : byFolder ? null : face}
+        >{byFolder
+          // in the folder tree the folder row already draws a folder: the worktrees' fold is a chevron
+          ? <span className="sidebar-mark" aria-hidden="true">{collapsed ? <ChevronRight /> : <ChevronDown />}</span>
+          : <>{face}<span className="workspace-toggle-fold" aria-hidden="true">{collapsed ? <Folder /> : <FolderOpen />}</span></>}</button> : byFolder ? null : face}
         <div
           className="pane-select workspace-select"
           role="button"
@@ -873,7 +876,7 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions, watching = 
       </div>
       {inlineError?.workspaceId === workspace.workspace_id && <p className="sidebar-inline-error" role="alert">{inlineError.message}{inlineError.detail !== null && <><br /><code>{inlineError.detail}</code></>}</p>}
       {/* in the folder tree a workspace of several panes lists them, as the Agents list would; the filter keeps its matches and the selection */}
-      {byFolder && panes.length > 1 && <ul className="pane-list workspace-panes">
+      {byFolder && withPanes && panes.length > 1 && <ul className="pane-list workspace-panes">
         {panes.filter((candidate) => filtered === null || filtered.panes.has(candidate.pane_id) || candidate.pane_id === selectedPaneId).map((candidate) => renderPaneRow(candidate, workspace))}
       </ul>}
     </li>;
@@ -948,9 +951,9 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions, watching = 
     if (panes.length === 0) return null;
     const foldKey = `folder:${folder.key}`;
     const folded = worktreesFolded(foldKey, workspaces);
-    // a folded folder still shows the workspace that is open, as a folded worktree group does
-    const holdsSelection = (group: WorkspaceGroup<WorkspaceInfo>): boolean => panes.some((pane) => pane.pane_id === selectedPaneId && (pane.workspace_id === group.workspace.workspace_id || group.children.some((child) => child.workspace_id === pane.workspace_id)));
-    const shown = folded ? folder.groups.filter(holdsSelection) : folder.groups;
+    // a folded folder still shows the workspace that is open, its row alone, as a folded worktree group does
+    const open = folded ? workspaces.find((workspace) => panes.some((pane) => pane.pane_id === selectedPaneId && pane.workspace_id === workspace.workspace_id)) : undefined;
+    const rows = folded ? (open ? [renderWorkspaceRow(open, [], false, undefined, false)] : []) : folder.groups.map(renderGroup);
     const contentsId = `${rosterId}-folder-${encodeURIComponent(folder.key)}`;
     // a folder's row drags its workspaces as one block, before or after another folder's, in herdr's order
     const folderIds = (key: string): string[] => visibleFolders.find((candidate) => candidate.key === key)?.groups.flatMap(groupIds) ?? [];
@@ -976,12 +979,12 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions, watching = 
           {folded ? <ChevronRight aria-hidden="true" /> : <ChevronDown aria-hidden="true" />}
           {folded ? <Folder aria-hidden="true" /> : <FolderOpen aria-hidden="true" />}
           <span className="sidebar-folder-name">{folder.name}</span>
-          {folded && <span className="workspace-fold-count" aria-hidden="true">{workspaces.length}</span>}
+          {folded && <span className="workspace-fold-count" aria-hidden="true">{panes.length}</span>}
         </button>
         {/* folded, the folder stands for its rows: a pane that waits or has finished must not hide behind it */}
         {folded && <span className="sidebar-pane-meta"><StatusBadge compact status={online ? rollupStatus(panes.map((pane) => activity.status(machineId, pane))) : undefined} /></span>}
       </div>
-      <ul className="workspace-list sidebar-folder-contents" id={contentsId} hidden={shown.length === 0}>{shown.map(renderGroup)}</ul>
+      <ul className="workspace-list sidebar-folder-contents" id={contentsId} hidden={rows.length === 0}>{rows}</ul>
     </li>;
   };
 

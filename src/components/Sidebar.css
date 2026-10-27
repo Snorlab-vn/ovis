@@ -410,7 +410,7 @@ button.sidebar-section-label:focus-visible { outline-offset: calc(var(--ring-off
 /* A workspace of several panes lists them under its row, one indent in, each on one line when it
    has nothing to say under its title; the selection fills the pane's row, not the workspace's too. */
 .workspace-panes .agent-item { padding-left: var(--side-box); }
-.sidebar-folder-contents .workspace-panes .agent-item { padding-left: calc(var(--side-box) * 2); }
+.sidebar-folder-contents .workspace-panes .agent-item { padding-left: calc(var(--side-box) * 1.5); }
 .workspace-panes .agent-row { min-height: var(--side-row); }
 .workspace-group.is-selected:has(> .workspace-panes) > .workspace-header { background: transparent; }
 
