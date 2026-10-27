@@ -12,6 +12,19 @@ bun run dev      # Vite on :5173, proxies /api and /ws
 
 `bun run server` and `bun run dev` never update themselves; only `bun run start` and the plugin run the update supervisor.
 
+## Next-prompts chips
+
+The composer of a Claude pane shows the [next-prompts](https://github.com/BEXAI/Mod-3-Next-Prompts)
+mod's three proposals as chips once the mod writes them for Ovis. Apply the patch to the mod and
+start a new Claude session (running ones keep the old code):
+
+```sh
+cd ~/.claude/mods/next-prompts && patch -p1 < /path/to/ovis/scripts/next-prompts-ovis.patch
+```
+
+It writes `$OVIS_STATE_DIR` (else `~/.config/ovis`)`/next-prompts/<session id>.json` after each turn and
+empties it when a prompt is sent; `GET /api/pane/next-prompts` reads it for the pane's Claude session.
+
 ## Local voice input
 
 On Apple Silicon, dictation can run on this PC with Qwen3-ASR instead of OpenAI. Needs `uv` and

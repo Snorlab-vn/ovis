@@ -1,0 +1,47 @@
+--- a/hooks/register.tsx
++++ b/hooks/register.tsx
+@@ -124,6 +124,23 @@
+   const after = await update($, tasks, prev => fn(prev, now))
+   if (after.length && !(await read($, goal))) {
+     await update($, goal, () => ({ text: goalText || 'Current goal', startedAt: now }))
++  }
++}
++
++// Ovis patch: the picks are also written for Ovis, which shows them as chips under its composer:
++// $OVIS_STATE_DIR (else ~/.config/ovis)/next-prompts/<session id>.json, { session_id, at, picks }.
++// A failed write never stops the mod.
++async function publishPicks($: EngineInterface, picks: string[]) {
++  try {
++    const home = await $.env.get('HOME')
++    const state = (await $.env.get('OVIS_STATE_DIR')) || (home ? `${home}/.config/ovis` : '')
++    if (!state) return
++    const dir = `${state}/next-prompts`
++    const id = await $.session.id()
++    await $.process.run(['mkdir', '-p', dir])
++    await $.fs.write(`${dir}/${id}.json`, JSON.stringify({ session_id: id, at: Date.now(), picks }))
++  } catch {
++    // Ovis is optional
+   }
+ }
+ 
+@@ -131,6 +148,7 @@
+ async function clearSuggestions($: EngineInterface) {
+   await update($, suggestions, () => [])
+   await update($, isThinking, () => false)
++  void publishPicks($, [])
+ }
+ 
+ // Stores Claude's estimate for the running request (typed loosely: the
+@@ -219,7 +237,11 @@
+           },
+           { signal: mine.signal },
+         )
+-        if (!mine.signal.aborted) await update($, suggestions, () => (reply.isAnswered ? parseSuggestions(reply.text) : []))
++        if (!mine.signal.aborted) {
++          const picks = reply.isAnswered ? parseSuggestions(reply.text) : []
++          await update($, suggestions, () => picks)
++          void publishPicks($, picks)
++        }
+       } finally {
+         if (!mine.signal.aborted) await update($, isThinking, () => false)
+       }

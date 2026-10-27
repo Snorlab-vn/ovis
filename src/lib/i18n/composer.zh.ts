@@ -7,6 +7,7 @@
  * Register and fixed terms follow ../i18n.zh.ts; a key another feature also uses goes there.
  */
 export const COMPOSER_ZH: Record<string, string> = {
+  "Suggested next prompts": "建议的下一条提示",
   "Edit queued message": "编辑排队消息",
   "Sent to Pi · waiting for transcript": "已发送到 Pi · 正在等待写入对话记录",
   "Sent to Pi · transcript confirmation unavailable": "已发送到 Pi · 无法确认对话记录",

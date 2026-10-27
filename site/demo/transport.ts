@@ -1187,6 +1187,11 @@ async function route(url: URL, method: string, init: RequestInit | undefined, in
   }
   if (path === "/api/session") return json({ snapshot: readSnapshot(local) });
   if (path === "/api/agents") return json(agentsFixture);
+  // the next-prompts mod's proposals (server/next-prompts.ts), for a Claude pane at rest
+  if (path === "/api/pane/next-prompts") {
+    const pane = paneOf(url.searchParams.get("pane_id") ?? "");
+    return json({ picks: pane?.agent === "claude" && pane.agent_status !== "working" ? ["Run the payment tests again", "Add a metric for replayed requests to the dashboard", "Open a pull request with these changes"] : [], at: Date.now() });
+  }
   // an agent started with an environment of its own (server/agent-profiles.ts), offered under its agent
   if (path === "/api/agent-profiles") return json({ profiles: [{ name: "claude-work", kind: "claude", label: "Claude Code (work)" }] });
   // Connections: a made-up tailnet; Open SSH is a new tab named after the device in the first workspace

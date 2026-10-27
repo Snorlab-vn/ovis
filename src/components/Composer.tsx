@@ -11,6 +11,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
+import { useNextPrompts } from "../lib/useNextPrompts.ts";
 import { flushSync } from "react-dom";
 import { ArrowUp, FileText, Folder, FolderGit2, GitBranch, LoaderCircle, MessageSquarePlus, Minimize2, Package, Plus, Puzzle, Square, TriangleAlert, UserRound, X, type LucideIcon } from "lucide-react";
 
@@ -322,6 +323,8 @@ export function Composer({
   // shown only when chosen in Settings → Quick replies: a button beside the box was one more thing to read
   const quickOpen = settings.showQuickReplies;
   const quickReplies = quickReplyButtons(settings);
+  // what the next-prompts mod proposes for this Claude pane's next turn (lib/useNextPrompts.ts)
+  const [nextPrompts, clearNextPrompts] = useNextPrompts(paneId, agent, agentStatus);
   /** the box's width: its text rewraps when the lane does (Settings → Chat width, a resized pane), and the automatic height with it */
   const [boxWidth, setBoxWidth] = useState(0);
 
@@ -1085,6 +1088,18 @@ export function Composer({
           <button type="button" className="composer-quick-reply composer-suggestion" title={t("Use the suggestion")} onClick={() => setTextAndCaret(offered, offered.length)}>
             <span aria-hidden="true">↹ </span>{offered}
           </button>
+        </div>
+      )}
+
+      {/* the next-prompts mod's proposals, as Tasky shows them: a click sends one as it is */}
+      {nextPrompts.length > 0 && (
+        <div className="composer-quick composer-next-prompts" role="group" aria-label={t("Suggested next prompts")}>
+          {nextPrompts.map((pick) => (
+            <button key={pick} type="button" className="composer-quick-reply" title={t("Send “{reply}”", { reply: pick })} disabled={!connected || sending}
+              onClick={() => { clearNextPrompts(); sendQuick(pick); }}>
+              {pick}
+            </button>
+          ))}
         </div>
       )}
 

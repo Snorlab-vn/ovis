@@ -1,6 +1,7 @@
 import { apiFetch as fetch } from "./api-request-id.ts";
 import type { SshOpened, TailnetPeers } from "../../shared/connections.ts";
 import type { AgentProfile } from "../../shared/agents.ts";
+import type { NextPrompts } from "../../shared/protocol.ts";
 import type { PreferencesChange, SharedPreferences } from "../../shared/preferences.ts";
 import type { SeenFinish } from "../../shared/seen.ts";
 import { resumeConnectionTraces } from "./connectionTrace.ts";
@@ -627,6 +628,11 @@ export async function clearPane(paneId: string, machineId = "local"): Promise<vo
 }
 
 /** GET /api/agents: of the agent kinds herdr can start, the ones this app supports and that PC has installed, for the new-session dialog. */
+/** GET /api/pane/next-prompts: the next-prompts mod's proposals for a Claude pane (server/next-prompts.ts); none from an older bridge. */
+export async function fetchNextPrompts(paneId: string, machineId = "local"): Promise<string[]> {
+  return (await getJson<NextPrompts>(`${machinePath(machineId, "pane/next-prompts")}?pane_id=${encodeURIComponent(paneId)}`).catch(() => ({ picks: [] }))).picks;
+}
+
 /** GET /api/agent-profiles: the agents this PC starts with an environment of their own; an older bridge has none. */
 export async function fetchAgentProfiles(machineId = "local"): Promise<AgentProfile[]> {
   return (await getJson<{ profiles: AgentProfile[] }>(machinePath(machineId, "agent-profiles")).catch(() => ({ profiles: [] }))).profiles;

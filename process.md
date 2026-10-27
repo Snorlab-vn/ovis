@@ -98,3 +98,18 @@ exactly (the safety net); drag stays smooth (a workspace within its folder, a fo
 ## Backlog
 
 Not scheduled; see the plan's backlog list.
+
+## Backlog decisions (owner, 2026-10-27)
+
+| Task | Status | Notes |
+|---|---|---|
+| B1 claude2 + skip permissions | done | agent profiles; Claude launch mode bypassPermissions (shared) |
+| B2 Unread mark (2.4b) | dropped | Needs attention covers it |
+| B3 Next-prompts chips | done (v1) | mod patch `scripts/next-prompts-ovis.patch` writes `~/.config/ovis/next-prompts/<session>.json`; chips under a Claude pane's composer, click sends one. Multi-select send/copy and kept earlier sets: next |
+| B4 Unsent drafts kept on the server | todo | |
+| B5 Edit and resend for Codex / Cursor | later | |
+| B6 Voice: model kept warm, single-modifier dictation shortcut | todo | |
+| B7 Close leaves the screen at the click | todo | |
+| B8 Paste `.gitignore` | done upstream | `server/paste.ts` preparePasteDirectory |
+| B9 Settings restart rows | later | Ovis has no restart rows yet |
+

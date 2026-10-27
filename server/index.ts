@@ -28,6 +28,7 @@ import { ShellAgentLocator } from "./shell-agent.ts";
 import { handleAgentsRequest } from "./agents-routes.ts";
 import { handleConnectionsRequest } from "./connections.ts";
 import { handleAgentProfilesRequest, readAgentProfiles } from "./agent-profiles.ts";
+import { handleNextPromptsRequest } from "./next-prompts.ts";
 import { forgetPageMedia } from "./file-view.ts";
 import { handleFileRequest } from "./file-routes.ts";
 import { BACKGROUND_AGENT_PATH, handleBackgroundAgentRequest, type BackgroundAgentDeps } from "./background-agent.ts";
@@ -557,6 +558,9 @@ export function createServer(
 
       const agentsResponse = await handleAgentsRequest(request, pathname, shellAgents);
       if (agentsResponse) return agentsResponse;
+
+      const nextPromptsResponse = await handleNextPromptsRequest(request, url, pathname, stateDir);
+      if (nextPromptsResponse) return nextPromptsResponse;
 
       const profilesResponse = handleAgentProfilesRequest(request, pathname, stateDir);
       if (profilesResponse) return profilesResponse;

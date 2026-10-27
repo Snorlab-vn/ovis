@@ -7,6 +7,7 @@
  * Register and fixed terms follow ../i18n.ko.ts; a key another feature also uses goes there.
  */
 export const COMPOSER_KO: Record<string, string> = {
+  "Suggested next prompts": "추천 다음 프롬프트",
   "Edit queued message": "대기 중인 메시지 편집",
   "Sent to Pi · waiting for transcript": "Pi로 보냄 · 대화 기록을 기다리는 중",
   "Sent to Pi · transcript confirmation unavailable": "Pi로 보냄 · 대화 기록을 확인할 수 없음",

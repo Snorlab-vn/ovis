@@ -553,6 +553,9 @@ export type { RepoDiffScope, RepoBranchComparison, RepoDiffRefs, RepoDiffStatus,
 
 export type { AgentKind, AgentProfile } from "./agents.ts";
 
+/** GET /api/pane/next-prompts: a Claude pane's proposed next prompts (server/next-prompts.ts); `at` when the mod wrote them, ms */
+export interface NextPrompts { picks: string[]; at: number | null }
+
 export type { AgentIntegration, IntegrationsResponse } from "./integrations.ts";
 
 export type { CreateWorkspaceRequest, MoveTabRequest, TabMoved, MoveTabToWorkspaceRequest, TabMovedToWorkspace, CreateTabRequest, CreateWorktreeRequest, OpenWorktreeRequest, WorktreeOpened, RemoveWorktreeRequest, WorktreeRemoved, WorktreeEntry, WorktreeListing, WorkspaceCreated, TabCreated } from "./workspace-lifecycle.ts";

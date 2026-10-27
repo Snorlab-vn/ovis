@@ -1050,6 +1050,10 @@ Alert rows of the table above from the `--droplet-*` roles in `src/styles.css`.
   workspace, `ssh [user@]name` typed in it) and a pin. Only pinned devices show in the sidebar
   (`.tailnet-devices`, under the PCs; Settings `sidebarDevices`, shared): a dot, the name and its OS,
   a click opens SSH. The full list stays in the dialog, so a large tailnet does not crowd the sidebar.
+- **Next prompts** (`.composer-next-prompts`, Composer.tsx): a Claude pane at rest shows the
+  next-prompts mod's proposals (`useNextPrompts`, server/next-prompts.ts) as Tasky does, in the quick
+  replies' chip row and look, above them; a chip's tooltip is its whole text, a click sends it as it is.
+  None while the pane works, for another agent, or without the mod's patch.
 - **How long ago** (`.agent-ago`, `--fs-xs`, `--text-dim`, tabular digits): an agent row, and a
   workspace row of one pane, says when its state last changed in one unit (`0s`, `3m`, `2h`, `4d`,
   lib/ago.ts), from the bridge's `status_since` (server/finishes.ts), on one shared clock ticking every
