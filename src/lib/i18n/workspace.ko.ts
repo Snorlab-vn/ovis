@@ -41,7 +41,6 @@ export const WORKSPACE_KO: Record<string, string> = {
   "Resume": "이어하기",
   "Resuming…": "이어하는 중…",
   "Started {started} · last active {updated}": "{started}에 시작 · 마지막 사용 {updated}",
-  "Close dialog": "창 닫기",
   "Agent": "에이전트",
   "Directory": "폴더",
   "absolute path or ~/…": "절대 경로 또는 ~/…",

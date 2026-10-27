@@ -43,7 +43,6 @@ export const USAGE_JA: Record<string, string> = {
   "Its accounts disappear from this list. The hub itself is not changed.": "一覧からハブのアカウントが消えます。ハブ自体は変わりません。",
   "No accounts yet.": "まだアカウントがありません。",
   "Hub": "ハブ",
-  "This PC": "この PC",
   "No accounts signed in": "ログイン済みアカウントなし",
   "Turn on plan limits to see accounts.": "プラン上限をオンにするとアカウントが表示されます。",
   "Add account": "アカウントを追加",

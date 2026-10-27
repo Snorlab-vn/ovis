@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { ChevronDown, ChevronRight, CopyMinus, CopyPlus, Download, Monitor, Plus, Settings, SlidersHorizontal, X } from "lucide-react";
+import { ChevronDown, ChevronRight, CopyMinus, CopyPlus, Download, Network, Monitor, Plus, Settings, SlidersHorizontal, X } from "lucide-react";
 import type { Machine, MachineState, MachineUpdate, RemoteOvis } from "../../shared/machines.ts";
 import { copyText } from "../lib/clipboard.ts";
 import { MachineContext } from "../lib/machineContext.tsx";
@@ -10,6 +10,9 @@ import type { AppActions } from "../lib/actions.ts";
 import { useInstallPrompt } from "../lib/install.ts";
 import { Sidebar } from "./Sidebar.tsx";
 import { AgentSidebar, NeedsAttention } from "./AgentSidebar.tsx";
+import { startSsh } from "./ConnectionsDialog.tsx";
+import type { TailnetPeer } from "../../shared/connections.ts";
+import { fetchTailnetPeers } from "../lib/api.ts";
 import { SidebarActivityProvider, type SidebarActivity } from "../lib/sidebarActivity.tsx";
 import { filterSuggestions, machineFilter, sidebarFilter, type SidebarBranchLabels } from "../lib/sidebarFilter.ts";
 import { SidebarFilterProvider, useSidebarFilter } from "../lib/sidebarFilterContext.ts";
@@ -94,12 +97,14 @@ export function MachineSidebar(props: Props) {
       {/* a PC kept out on this device is said, with the way to show it again */}
       {hiddenCount > 0 && <button type="button" className="machine-hidden-note" title={t("Choose the PCs this device shows")} onClick={() => { requestSettingsPage({ page: "remote", section: "sidebar-pcs" }); props.actions.openSettings(); }}>{hiddenCount === 1 ? t("1 PC hidden on this device") : t("{n} PCs hidden on this device", { n: hiddenCount })}</button>}
     </div>
+    {settings.sidebarDevices.length > 0 && !filter.active && <TailnetDevices devices={settings.sidebarDevices} watching={props.watching === true} onOpened={(paneId) => { props.onSelect("local", paneId); props.actions.refresh(); }} onAll={props.actions.openConnections} />}
     {agentsListShown && <AgentSidebar machines={props.machines} selectedMachineId={props.selectedMachineId} selectedPaneId={props.selectedPaneId} stateWord={(machine) => t(STATE_WORD[machine.state])} watching={props.watching} onSelect={props.onSelect} />}
     <footer className="sidebar-footer">
       {/* browsers without an install prompt (iOS, plain HTTP) get the steps instead */}
       {!installed && <button className="btn btn-ghost sidebar-footer-action" aria-expanded={canInstall ? undefined : installHelpOpen} onClick={() => { if (canInstall) void install(); else setInstallHelpOpen(!installHelpOpen); }}><Download aria-hidden="true" />{t("Install app")}</button>}
       {!installed && !canInstall && installHelpOpen && <p className="sidebar-install-help" role="status">{help}</p>}
       <div className="sidebar-footer-row">
+        <button className="btn btn-ghost sidebar-footer-action" aria-label={t("Connections")} title={t("Connections")} onClick={props.actions.openConnections}><Network aria-hidden="true" /></button>
         <button className="btn btn-ghost sidebar-footer-action sidebar-footer-settings" aria-label={t("Settings")} title={t("Settings (⌘⇧,)")} onClick={props.actions.openSettings}><Settings aria-hidden="true" /></button>
         <UsageMeters />
       </div>
@@ -366,4 +371,44 @@ export function MachineActionBanner({ machines, onSetup }: { machines: Machine[]
     <button type="button" className="btn" onClick={() => update ? void machineRequest(`/${encodeURIComponent(first.id)}/update-bridge`, "POST").catch(() => onSetup(first, true)) : onSetup(first, false)}>{own ? t(own.updatable ? "Update this PC's Ovis" : "Reconnect") : t(conflict ? "Reconnect" : update ? "Update bridge" : "Set up web access")}</button>
     <button type="button" className="icon-button update-notice-dismiss" aria-label={t("Dismiss")} title={t("Dismiss")} onClick={() => { const next = [...dismissed, ...waiting.map(noticeKey)]; setDismissed(next); writeDismissed(next); }}><X /></button>
   </div>;
+}
+
+/** a pinned device's dot and place are read again this often while the list is drawn */
+const DEVICES_REFRESH_MS = 60_000;
+
+/**
+ * The tailnet devices the user pinned in Connections (Settings `sidebarDevices`), in pin order: a
+ * row opens SSH to it in a tab, as the user remembered for it; the rest of the tailnet stays in the dialog.
+ */
+function TailnetDevices({ devices, watching, onOpened, onAll }: { devices: readonly string[]; watching: boolean; onOpened: (paneId: string) => void; onAll: () => void }) {
+  const t = useT();
+  const [peers, setPeers] = useState<TailnetPeer[]>([]);
+  const [opening, setOpening] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    const read = (): void => { fetchTailnetPeers().then((answer) => { if (!cancelled) setPeers(answer.peers); }, () => { /* the rows keep their last dots */ }); };
+    read();
+    const timer = window.setInterval(read, DEVICES_REFRESH_MS);
+    return () => { cancelled = true; window.clearInterval(timer); };
+  }, []);
+  const open = (dns: string): void => {
+    setOpening(dns);
+    setError(null);
+    startSsh(dns).then(onOpened, (reason: unknown) => setError(reason instanceof Error ? reason.message : String(reason))).finally(() => setOpening(null));
+  };
+  return <section className="tailnet-devices" aria-label={t("Tailnet")}>
+    <p className="sidebar-section-label"><span>{t("Tailnet")}</span><button type="button" className="sidebar-row-action" aria-label={t("Connections")} title={t("Connections")} onClick={onAll}><Network aria-hidden="true" /></button></p>
+    <ul className="tailnet-device-list">{devices.map((dns) => {
+      const peer = peers.find((candidate) => candidate.dns === dns);
+      return <li key={dns}>
+        <button type="button" className="tailnet-device" disabled={watching || opening !== null} aria-busy={opening === dns} title={t("Open SSH to {name}", { name: dns })} onClick={() => open(dns)}>
+          <span className={`machine-dot is-${peer?.online ? "connected" : "disconnected"}`} aria-hidden="true" />
+          <span className="tailnet-device-name">{peer?.name ?? dns.split(".")[0]}</span>
+          {peer?.os && <span className="tailnet-device-os">{peer.os}</span>}
+        </button>
+      </li>;
+    })}</ul>
+    {error !== null && <p className="sidebar-inline-error" role="alert">{error}</p>}
+  </section>;
 }

@@ -41,7 +41,6 @@ export const WORKSPACE_ZH: Record<string, string> = {
   "Resume": "继续",
   "Resuming…": "正在继续…",
   "Started {started} · last active {updated}": "开始于 {started} · 最后使用 {updated}",
-  "Close dialog": "关闭对话框",
   "Agent": "Agent",
   "Directory": "目录",
   "absolute path or ~/…": "绝对路径或 ~/…",

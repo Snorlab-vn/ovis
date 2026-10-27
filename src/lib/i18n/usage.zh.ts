@@ -43,7 +43,6 @@ export const USAGE_ZH: Record<string, string> = {
   "Its accounts disappear from this list. The hub itself is not changed.": "中心账号将从列表中消失，中心本身不变。",
   "No accounts yet.": "尚无账号。",
   "Hub": "中心",
-  "This PC": "本机",
   "No accounts signed in": "没有已登录的账号",
   "Turn on plan limits to see accounts.": "开启套餐限额以查看账号。",
   "Add account": "添加账号",

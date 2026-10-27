@@ -43,7 +43,6 @@ export const USAGE_KO: Record<string, string> = {
   "Its accounts disappear from this list. The hub itself is not changed.": "허브 계정이 목록에서 사라져요. 허브 자체는 그대로예요.",
   "No accounts yet.": "아직 계정이 없어요.",
   "Hub": "허브",
-  "This PC": "이 PC",
   "No accounts signed in": "로그인된 계정 없음",
   "Turn on plan limits to see accounts.": "요금제 한도를 켜면 계정이 보여요.",
   "Add account": "계정 추가",

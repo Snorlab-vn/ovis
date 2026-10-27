@@ -72,8 +72,8 @@ exactly (the safety net); drag stays smooth (a workspace within its folder, a fo
 | 3.1 `GET /api/connections/peers` from `tailscale status --json`, reusing `server/tailscale.ts` | done | role check like other read routes `server/connections.ts` `parsePeers`: Self first, online then name; LastSeen 0001 = null; names outside [a-z0-9.-] dropped. `readTailscaleStatus` exported from tailscale.ts, injectable (`tailscaleStatus` option). Watch devices refused (index.ts gate) |
 | 3.2 `POST /api/connections/ssh {fqdn, user}`: listed peers only, checked user name | done | opens a herdr tab running `ssh`, no focus move fresh status read per request; user optional, `SSH_USER` regex; tab in the `Connections` workspace (made once), `ssh [user@]dns` typed + Enter after 300ms; no `-o` ever |
 | 3.3 Contract tests with a fake `tailscale` and isolated herdr; demo transport routes | done | server/connections.test.ts: herdr spied, never the real session; parse, refusals, reuse of the workspace, watch 403 |
-| 3.4 Connections page: search, online first, per-peer user, Open SSH, Add as Remote PC | todo | |
-| 3.5 i18n, browser check, changelog fragment | todo | |
+| 3.4 Connections page: search, online first, per-peer user, Open SSH, Add as Remote PC | done | dialog (owner's pick, not the sidebar): search, online first, user per device (localStorage), Open SSH, pin to show it in the sidebar (shared setting `sidebarDevices`); sidebar lists pinned ones only. Add as Remote PC left out (MachineDialog takes no prefilled target) |
+| 3.5 i18n, browser check, changelog fragment | done | ko/ja/zh; demo peers + ssh route; browser check desktop + 390px: list, search, pin, bad user refused, Open SSH and sidebar row open a tab, no overflow, no console errors |
 
 ## Findings (1.1)
 

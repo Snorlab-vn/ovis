@@ -1116,6 +1116,13 @@ function demoPortal(): PortalStatus {
   return NO_PORTAL;
 }
 
+const DEMO_PEERS = [
+  { name: "workstation", dns: "workstation.tail-demo.ts.net", os: "linux", online: true, last_seen: null, self: true },
+  { name: "build-mac", dns: "build-mac.tail-demo.ts.net", os: "macOS", online: true, last_seen: null, self: false },
+  { name: "gpu-box", dns: "gpu-box.tail-demo.ts.net", os: "linux", online: true, last_seen: null, self: false },
+  { name: "nas", dns: "nas.tail-demo.ts.net", os: "linux", online: false, last_seen: new Date(Date.now() - 3 * 86_400_000).toISOString(), self: false },
+];
+
 async function route(url: URL, method: string, init: RequestInit | undefined, input: RequestInfo | URL): Promise<Response> {
   const path = url.pathname;
   const query = url.searchParams;
@@ -1180,6 +1187,17 @@ async function route(url: URL, method: string, init: RequestInit | undefined, in
   }
   if (path === "/api/session") return json({ snapshot: readSnapshot(local) });
   if (path === "/api/agents") return json(agentsFixture);
+  // Connections: a made-up tailnet; Open SSH is a new tab named after the device in the first workspace
+  if (path === "/api/connections/peers") return json({ available: true, peers: DEMO_PEERS });
+  if (path === "/api/connections/ssh" && method === "POST") {
+    const body = await bodyOf(init, input);
+    const peer = DEMO_PEERS.find((candidate) => candidate.dns === body["dns"]);
+    if (!peer) return error("unknown_peer", "dns must be a device of this PC's tailnet", 400);
+    const workspaceId = snapshot().workspaces[0]!.workspace_id;
+    const made = await route(new URL("/api/tab/create", url), "POST", { method: "POST", body: JSON.stringify({ workspace_id: workspaceId, label: peer.name, agent: null }) }, input);
+    const created = await made.json() as { pane_id: string };
+    return json({ workspace_id: workspaceId, pane_id: created.pane_id });
+  }
   if (path === "/api/integrations") return json({ integrations: integrationsFixture } satisfies IntegrationsResponse);
   if (path === "/api/updates") return json({ managed: false, auto_update: false, phase: "idle", current_revision: null, latest_revision: null, current_version: __APP_VERSION__, latest_version: null, available: false, checked_at: null, blocked_reason: null, error: null }, 200, { "cache-control": "no-store" });
   if (path === "/api/updates/notes") return json({ revision: null, releases: [], omitted: 0 }, 200, { "cache-control": "no-store" });

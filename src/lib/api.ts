@@ -1,4 +1,5 @@
 import { apiFetch as fetch } from "./api-request-id.ts";
+import type { SshOpened, TailnetPeers } from "../../shared/connections.ts";
 import type { PreferencesChange, SharedPreferences } from "../../shared/preferences.ts";
 import type { SeenFinish } from "../../shared/seen.ts";
 import { resumeConnectionTraces } from "./connectionTrace.ts";
@@ -722,6 +723,17 @@ export async function fetchRepoDiffFile(query: RepoDiffQuery, path: string, oldP
   params.set("path", path);
   if (oldPath !== null) params.set("old_path", oldPath);
   return getJson<RepoDiffFilePatch>(machinePath(machineId, `workspace/diff/file?${params.toString()}`));
+}
+
+/** GET /api/connections/peers: this PC's tailnet, as `tailscale status` lists it (shared/connections.ts). */
+export function fetchTailnetPeers(): Promise<TailnetPeers> {
+  return getJson<TailnetPeers>("/api/connections/peers");
+}
+
+/** POST /api/connections/ssh: `ssh [user@]dns` in a new tab of this PC's Connections workspace. */
+export async function openSsh(dns: string, user: string | null): Promise<SshOpened> {
+  const response = await sendJson("/api/connections/ssh", "POST", { dns, user });
+  return (await response.json()) as SshOpened;
 }
 
 export type { CreateTabRequest, CreateWorkspaceRequest } from "../../shared/protocol.ts";

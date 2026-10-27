@@ -1,0 +1,61 @@
+/* Connections: one row per tailnet device, its name and place, then the user, Open SSH and the pin */
+.connections-dialog .modal-body {
+  min-height: calc(var(--control-h) * 8);
+}
+
+.connections-search { width: 100%; }
+
+.connections-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.connections-peer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  min-height: var(--control-h);
+}
+
+.connections-peer.is-offline .connections-peer-copy { opacity: 0.6; }
+
+.connections-peer-copy {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.connections-peer-name,
+.connections-peer-place {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.connections-peer-name { color: var(--text-strong); }
+.connections-peer-name .machine-kind { margin-left: var(--space-1); }
+
+.connections-peer-place {
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+}
+
+.connections-user {
+  flex: 0 0 auto;
+  width: calc(var(--control-h) * 2.6);
+}
+
+.connections-open { flex: none; }
+
+/* a phone: the user and the buttons go under the name */
+@media (max-width: 480px) {
+  .connections-peer { flex-wrap: wrap; }
+  .connections-peer-copy { flex-basis: calc(100% - var(--space-4)); }
+  .connections-user { flex: 1 1 auto; }
+}

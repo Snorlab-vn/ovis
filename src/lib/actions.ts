@@ -60,6 +60,8 @@ export interface AppActions {
   openSettings: () => void;
   /** the Add PC dialog, from Settings → Remote PCs and the palette; Settings closes first */
   openAddPc: () => void;
+  /** Connections: this PC's tailnet devices, each opened over SSH in a tab (components/ConnectionsDialog.tsx) */
+  openConnections: () => void;
   toggleSidebar: () => void;
   /** flips dark/light (a `system` setting becomes the opposite of the resolved theme) */
   toggleTheme: () => void;

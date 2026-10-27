@@ -562,3 +562,54 @@ p.machine-own-address {
   color: var(--text-strong);
   font-family: var(--font-mono);
 }
+
+/* the tailnet devices pinned in Connections: a label with the way to all of them, then one row each */
+.tailnet-devices .sidebar-section-label { justify-content: space-between; padding-left: var(--space-2); }
+
+.tailnet-device-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tailnet-device {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-width: 0;
+  min-height: var(--side-row);
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.tailnet-device:disabled { cursor: default; }
+.tailnet-device[aria-busy="true"] { opacity: 0.6; }
+
+@media (hover: hover) {
+  .tailnet-device:hover:not(:disabled) { background: var(--side-hover); }
+}
+
+.tailnet-device-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tailnet-device-os {
+  flex: none;
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+}
+
+.tailnet-device .machine-dot,
+.connections-peer .machine-dot { margin-left: 0; }

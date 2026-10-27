@@ -1042,6 +1042,13 @@ Alert rows of the table above from the `--droplet-*` roles in `src/styles.css`.
   not opened since, newest change first; a muted pane is left out (`attentionRows`, lib/agentRoster.ts).
   Rows are the Agents list's (`AgentRowBody`); a row opens its pane. Nothing is drawn while it is empty
   or the filter is on.
+- **Connections** (`ConnectionsDialog`, the sidebar footer's network button and the palette), as
+  Tasky's: every device of this PC's tailnet (`tailscale status --json`, server/connections.ts),
+  this PC first, then online ones, searchable; a row has its user (remembered per device in this
+  browser, blank leaves it to `ssh`), **Open SSH** (a tab named after the device in the `Connections`
+  workspace, `ssh [user@]name` typed in it) and a pin. Only pinned devices show in the sidebar
+  (`.tailnet-devices`, under the PCs; Settings `sidebarDevices`, shared): a dot, the name and its OS,
+  a click opens SSH. The full list stays in the dialog, so a large tailnet does not crowd the sidebar.
 - **How long ago** (`.agent-ago`, `--fs-xs`, `--text-dim`, tabular digits): an agent row, and a
   workspace row of one pane, says when its state last changed in one unit (`0s`, `3m`, `2h`, `4d`,
   lib/ago.ts), from the bridge's `status_since` (server/finishes.ts), on one shared clock ticking every
