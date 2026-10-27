@@ -12,7 +12,7 @@ import { exactChordRisk, isReservedShortcutKey, parseExactChord } from "../lib/s
 import { WEB_LINK_TARGETS } from "../lib/webPanel.ts";
 import { FILE_OPEN_TARGETS } from "../lib/filePresentation.ts";
 import { CLAUDE_LAUNCH_MODES, CODEX_LAUNCH_MODES, type ClaudeLaunchMode, type CodexLaunchMode } from "../lib/agentLaunchMode.ts";
-import { CHAT_FONT_MAX, CHAT_FONT_MIN, CHAT_WIDTHS, chatFontSize, DEFAULT_SETTINGS, DIFF_STYLES, MARKDOWN_WIDTHS, QUICK_REPLIES_MAX, QUICK_REPLY_MAX_CHARS, TERMINAL_FONT_MAX, TERMINAL_FONT_MIN, TERMINAL_WHEEL_SPEED_MAX, TERMINAL_WHEEL_SPEED_MIN, DICTATION_LANGUAGES, VOICE_BUTTONS, useSettings, forgetPaneViews, uiFontSize, type DictationLanguage, type VoiceButton } from "../lib/settings.ts";
+import { CHAT_FONT_MAX, CHAT_FONT_MIN, CHAT_WIDTHS, chatFontSize, DEFAULT_SETTINGS, DIFF_STYLES, MARKDOWN_WIDTHS, QUICK_REPLIES_MAX, QUICK_REPLY_MAX_CHARS, TERMINAL_FONT_MAX, TERMINAL_FONT_MIN, TERMINAL_WHEEL_SPEED_MAX, TERMINAL_WHEEL_SPEED_MIN, DICTATION_LANGUAGES, VOICE_BUTTONS, useSettings, forgetPaneViews, uiFontSize, type DictationKey, type DictationLanguage, type VoiceButton } from "../lib/settings.ts";
 import { pickTheme, rowFor, THEME_IDS, type Mode, type ThemeId } from "../lib/themes.ts";
 import { LANGUAGE_NAMES, LANGUAGE_SETTINGS, useLocale, useT } from "../lib/i18n.ts";
 import { useFocusTrap } from "../lib/useFocusTrap.ts";
@@ -631,6 +631,15 @@ function VoicePage() {
         {settings.voiceInput !== "off" && (
           <SettingsRow label={t("Dictation language")} description={t("Auto listens for the app's language, or for the browser's when the app is not translated into it")} htmlFor="settings-voice-language">
             <DictationLanguageSelect />
+          </SettingsRow>
+        )}
+        {settings.voiceInput !== "off" && (
+          <SettingsRow label={t("Dictation key")} description={t("Held to dictate. A lone Option key starts after a moment, so Option with another key keeps working")} htmlFor="settings-dictation-key">
+            <SettingsSelect id="settings-dictation-key" value={settings.dictationKey} onChange={(event) => update({ dictationKey: event.target.value as DictationKey })}>
+              <option value="chord">{formatKeys(["Mod", "Shift", "Space"]).join(" ")}</option>
+              <option value="AltLeft">{t(isMacPlatform() ? "Left Option" : "Left Alt")}</option>
+              <option value="AltRight">{t(isMacPlatform() ? "Right Option" : "Right Alt")}</option>
+            </SettingsSelect>
           </SettingsRow>
         )}
       </SettingsGroup>

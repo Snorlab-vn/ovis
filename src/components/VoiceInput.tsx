@@ -8,7 +8,7 @@ import { Check, Mic, Square, X } from "lucide-react";
 import "./VoiceInput.css";
 
 import { useT, type Translate } from "../lib/i18n.ts";
-import { useSettings, wantsVoiceInput } from "../lib/settings.ts";
+import { useSettings, wantsVoiceInput, type DictationKey } from "../lib/settings.ts";
 import { isMacPlatform, isVoiceShortcut } from "../lib/shortcuts.ts";
 import { applyDictation, useVoiceInput, type InsertedSpan, type VoiceError, type VoiceInput, type VoiceText, type VoiceUnavailable } from "../lib/voice.ts";
 import { VOICE_MAX_SECONDS, type VoiceMode } from "../../shared/voice.ts";
@@ -50,7 +50,30 @@ function releaseHeld(): void {
   target?.voice().release();
 }
 
+/** Settings → Voice input → Dictation key, as the mounted fields last read it */
+let dictationKey: DictationKey = "chord";
+/** one Option key held alone starts dictation after this long; another key before it keeps Option+key */
+const LONE_KEY_HOLD_MS = 250;
+let loneKeyTimer: number | undefined;
+
+function startHeld(): void {
+  const target = shortcutTarget();
+  if (!target || held) return;
+  held = target;
+  target.press();
+}
+
 function onShortcutDown(event: KeyboardEvent): void {
+  if (dictationKey !== "chord") {
+    if (event.code === dictationKey && !event.ctrlKey && !event.metaKey && !event.shiftKey) {
+      if (!event.repeat && loneKeyTimer === undefined && !held) loneKeyTimer = window.setTimeout(() => { loneKeyTimer = undefined; startHeld(); }, LONE_KEY_HOLD_MS);
+      return;
+    }
+    // Option with another key is that key's (a word jump, a special character), not dictation
+    window.clearTimeout(loneKeyTimer);
+    loneKeyTimer = undefined;
+    return;
+  }
   if (!isVoiceShortcut(event, isMacPlatform())) return;
   const target = shortcutTarget();
   if (!target) return;
@@ -63,6 +86,13 @@ function onShortcutDown(event: KeyboardEvent): void {
 }
 
 function onShortcutUp(event: KeyboardEvent): void {
+  if (dictationKey !== "chord") {
+    if (event.code !== dictationKey) return;
+    window.clearTimeout(loneKeyTimer);
+    loneKeyTimer = undefined;
+    if (held) releaseHeld();
+    return;
+  }
   if (held && (event.code === "Space" || event.key === " " || event.key === "Shift" || event.key === "Meta" || event.key === "Control")) releaseHeld();
 }
 
@@ -123,6 +153,7 @@ export interface Dictation {
 export function useDictation(options: DictationOptions): Dictation {
   const t = useT();
   const { settings } = useSettings();
+  dictationKey = settings.dictationKey;
   const wanted = wantsVoiceInput(settings.voiceInput, options.mode, options.phone === true);
   const [partial, setPartial] = useState("");
   const latest = useRef(options);

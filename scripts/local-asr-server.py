@@ -17,6 +17,8 @@ out as written.
 import asyncio
 import json
 import os
+import threading
+import time
 import subprocess
 import sys
 import tempfile
@@ -63,6 +65,32 @@ def mlx_model(name: str):
 
 mlx.submit(mlx_model, DEFAULT).result()
 app = FastAPI()
+
+# Tasky's warm-keeping: macOS pages a model out after a while unused, and the next dictation then
+# waits seconds for it. Half a second of silence through the loaded model every minute keeps it in;
+# a pass that took long says it had been paged out.
+WARM_EVERY_S = 60
+SILENCE = np.zeros(8000, np.float32)
+
+
+def keep_warm() -> None:
+    while True:
+        time.sleep(WARM_EVERY_S)
+        name = next(iter(loaded), None)
+        if name is None:
+            continue
+        started = time.monotonic()
+        try:
+            mlx.submit(transcribe_mlx, name, SILENCE, None).result()
+        except Exception as error:  # a failed pass must not end the loop
+            print(f"warm pass failed: {error}", flush=True)
+            continue
+        took = time.monotonic() - started
+        if took > 2:
+            print(f"{name} had been paged out: the warm pass took {took:.1f}s", flush=True)
+
+
+threading.Thread(target=keep_warm, daemon=True).start()
 
 
 def decode(data: bytes, suffix: str) -> np.ndarray:

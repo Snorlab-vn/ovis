@@ -108,7 +108,7 @@ Not scheduled; see the plan's backlog list.
 | B3 Next-prompts chips | done (v1) | mod patch `scripts/next-prompts-ovis.patch` writes `~/.config/ovis/next-prompts/<session>.json`; chips under a Claude pane's composer, click sends one. Multi-select send/copy and kept earlier sets: next |
 | B4 Unsent drafts kept on the server | todo | |
 | B5 Edit and resend for Codex / Cursor | later | |
-| B6 Voice: model kept warm, single-modifier dictation shortcut | todo | |
+| B6 Voice: model kept warm, single-modifier dictation shortcut | done | Settings → Voice input → Dictation key: chord, Left or Right Option alone (held 250 ms, so Option+key keeps working); local ASR server runs 0.5 s of silence through the loaded model every minute, logs when it had been paged out |
 | B7 Close leaves the screen at the click | todo | |
 | B8 Paste `.gitignore` | done upstream | `server/paste.ts` preparePasteDirectory |
 | B9 Settings restart rows | later | Ovis has no restart rows yet |

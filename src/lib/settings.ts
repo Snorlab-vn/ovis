@@ -177,6 +177,8 @@ export interface Settings {
   voiceInput: VoiceButton;
   /** the language dictation listens for; auto: the UI language's, or the browser's the UI lacks (src/lib/voice.ts dictationLocale) */
   voiceLanguage: DictationLanguage;
+  /** the key held to dictate: Mod+Shift+Space, or one Option (Alt) key alone (Tasky's), held a moment so Option+key keeps its use */
+  dictationKey: DictationKey;
   voicePolishChat: boolean;
   /** off by default: a terminal line is usually a command, kept as spoken */
   voicePolishTerminal: boolean;
@@ -201,6 +203,10 @@ export type MarkdownWidth = (typeof MARKDOWN_WIDTHS)[number];
 export const DIFF_STYLES = ["unified", "split"] as const;
 export type DiffStyle = (typeof DIFF_STYLES)[number];
 
+/** the key held to dictate (components/VoiceInput.tsx) */
+export const DICTATION_KEYS = ["chord", "AltLeft", "AltRight"] as const;
+export type DictationKey = (typeof DICTATION_KEYS)[number];
+
 /** Raw custom text, key combinations and account keys are never copied. Requiring every other
  * Settings field in the projection makes a new field require an explicit collection decision.
  * fileOpen, webLinks, the launch modes, followHerdrFocus, composerNewTabButton, terminalMirrorWrap and the interface font are
@@ -208,7 +214,7 @@ export type DiffStyle = (typeof DIFF_STYLES)[number];
 type TelemetrySourceSettings = Omit<Settings,
   "keyBarExtras" | "keyBarItems" | "shortcutOverrides" | "terminalFontFamily" | "chatFontFamily" | "uiFontFamily"
   | "quickReplies" | "usageOrder" | "usageHidden" | "fileOpen" | "webLinks" | "claudeLaunchMode" | "codexLaunchMode"
-  | "followHerdrFocus" | "composerNewTabButton" | "terminalMirrorWrap" | "sidebarLayout" | "agentsList" | "sidebarDevices">;
+  | "followHerdrFocus" | "composerNewTabButton" | "terminalMirrorWrap" | "sidebarLayout" | "agentsList" | "sidebarDevices" | "dictationKey">;
 
 /** Compare structured custom settings by content against this app's built-in defaults. */
 function differsFromDefault(value: unknown, defaultValue: unknown): boolean {
@@ -294,7 +300,7 @@ export const SETTING_SCOPE = {
   composerNewTabButton: "device",
   keepScreenOn: "device", alertsOn: "device", alertInput: "device", alertDone: "device", alertInApp: "device", alertSound: "device",
   paletteLight: "device", paletteDark: "device", statusIndicators: "device",
-  voiceInput: "device", voiceLanguage: "device", voicePolishChat: "device", voicePolishTerminal: "device",
+  voiceInput: "device", voiceLanguage: "device", dictationKey: "device", voicePolishChat: "device", voicePolishTerminal: "device",
   // Viewer layout follows this screen, as chatWidth does.
   wrapCode: "device", markdownWidth: "device", diffStyle: "device", fileOpen: "device", webLinks: "device",
   // a new agent starts the same way whichever device opened it
@@ -359,6 +365,7 @@ export const DEFAULT_SETTINGS: Settings = {
   sidebarDevices: [],
   voiceInput: "auto",
   voiceLanguage: "auto",
+  dictationKey: "chord",
   voicePolishChat: true,
   voicePolishTerminal: false,
   wrapCode: false,
@@ -541,6 +548,7 @@ export function sanitizeSettings(raw: unknown): Settings {
     usageHidden: usageKeys(record["usageHidden"]),
     sidebarDevices: usageKeys(record["sidebarDevices"]),
     voiceInput: voiceButton(record["voiceInput"]),
+    dictationKey: DICTATION_KEYS.includes(record["dictationKey"] as DictationKey) ? record["dictationKey"] as DictationKey : DEFAULT_SETTINGS.dictationKey,
     voiceLanguage: DICTATION_LANGUAGES.includes(record["voiceLanguage"] as (typeof DICTATION_LANGUAGES)[number]) ? record["voiceLanguage"] as DictationLanguage : DEFAULT_SETTINGS.voiceLanguage,
     voicePolishChat: typeof record["voicePolishChat"] === "boolean" ? record["voicePolishChat"] : DEFAULT_SETTINGS.voicePolishChat,
     voicePolishTerminal: typeof record["voicePolishTerminal"] === "boolean" ? record["voicePolishTerminal"] : DEFAULT_SETTINGS.voicePolishTerminal,
