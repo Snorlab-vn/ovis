@@ -23,8 +23,10 @@ scripts/local-asr.sh   # first run: makes ~/.local/share/ovis-asr and fetches th
 
 It serves `http://127.0.0.1:8765/v1` on loopback (`OVIS_ASR_PORT` changes the port), warms the
 model and the webm/mp4 decoders, then prints what to enter in Settings > Voice input > Speech
-recognition: that Server URL, and any Model name (the server has one model). A server on this PC takes no key,
-and the audio stays here. A clip comes back in about 0.2 s once warm.
+recognition: that Server URL. The model list there offers the MLX models in
+`~/.local/share/ovis-asr/models` (Qwen3-ASR by default) and every model Handy has downloaded. An
+MLX model answers in about 0.2 s once warm; a Handy model starts Handy for each clip (0.3-1.2 s).
+A server on this PC takes no key, and the audio stays here.
 
 Tidying (the "Tidy dictated text" toggles) may use a provider of its own under Tidying server:
 any OpenAI-compatible `/chat/completions` root, its key and a model such as `claude-haiku-5-5`.

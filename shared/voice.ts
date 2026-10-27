@@ -22,6 +22,11 @@ export interface VoiceStatus {
   polish_key_set: boolean;
 }
 
+/** GET /api/voice/models: what the transcription server offers (its `/models`), name when it gives one. */
+export interface VoiceModels {
+  models: Array<{ id: string; name?: string }>;
+}
+
 /**
  * PUT /api/voice/config. A missing field is left as it is; `api_key: null` removes the key.
  * `base_url` changes only together with `api_key` while a key is saved, and never while the env

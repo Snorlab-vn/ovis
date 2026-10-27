@@ -25,7 +25,7 @@ if [ ! -f "$model/preprocessor_config.json" ] || [ ! -f "$model/model.safetensor
   "$venv/bin/hf" download "$repo" --local-dir "$model"
 fi
 
-"$venv/bin/python" -I "$(dirname "$0")/local-asr-server.py" "$model" "$port" &
+"$venv/bin/python" -I "$(dirname "$0")/local-asr-server.py" "$home/models" "${repo##*/}" "$port" &
 server=$!
 trap 'kill "$server" 2>/dev/null' EXIT INT TERM
 
@@ -40,11 +40,11 @@ warm="$(mktemp -d)"
 ffmpeg -loglevel error -i "$warm/a.wav" -c:a libopus "$warm/a.webm" || true
 ffmpeg -loglevel error -i "$warm/a.wav" -c:a aac "$warm/a.mp4" || true
 for clip in "$warm"/a.*; do
-  curl -sf -o /dev/null "http://127.0.0.1:$port/v1/audio/transcriptions" -F "file=@$clip" -F stream=true || echo "warmup failed: ${clip##*/}" >&2
+  curl -sf -o /dev/null "http://127.0.0.1:$port/v1/audio/transcriptions" -F "file=@$clip" -F "model=${repo##*/}" -F stream=true || echo "warmup failed: ${clip##*/}" >&2
 done
 rm -rf "$warm"
 
 echo "Ready. In Ovis: Settings > Voice input > Speech recognition"
 echo "  Server URL: http://127.0.0.1:$port/v1"
-echo "  Model name: any (this server has one model)"
+echo "  Model: pick one there (MLX models in $home/models, plus Handy's downloaded ones)"
 wait "$server"

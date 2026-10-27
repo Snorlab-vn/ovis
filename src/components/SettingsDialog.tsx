@@ -26,13 +26,13 @@ import type { UpdatesModel } from "../lib/updates.ts";
 import type { UserError } from "../lib/userError.ts";
 import type { Machine, MachineSettings } from "../../shared/machines.ts";
 import { canHideMachine, isMachineShown, setHiddenMachines, useHiddenMachines, withMachineHidden } from "../lib/hiddenMachines.ts";
-import { fetchRemoteAccess, fetchVoiceStatus, machineRequest, saveVoiceConfig } from "../lib/api.ts";
+import { fetchRemoteAccess, fetchVoiceModels, fetchVoiceStatus, machineRequest, saveVoiceConfig } from "../lib/api.ts";
 import { isLoopbackHost, phonePlan } from "../lib/phone.ts";
 import type { AgentIntegration, HealthAuth, PluginActions, RemoteAccess } from "../../shared/protocol.ts";
 import type { SecurityFacts } from "../lib/useAccess.ts";
 import { useMachineApi, useMachineId } from "../lib/machineContext.tsx";
 import { loadIntegrations, outcomeFor, type IntegrationsResult } from "../lib/integrations.ts";
-import type { VoiceConfigUpdate, VoiceStatus } from "../../shared/voice.ts";
+import type { VoiceConfigUpdate, VoiceModels, VoiceStatus } from "../../shared/voice.ts";
 import { dictationLocale, VOICE_CONFIG_EVENT } from "../lib/voice.ts";
 import { DevicesPanel } from "./DevicesPanel.tsx";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
@@ -588,6 +588,13 @@ function VoicePage() {
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const [micDenied, setMicDenied] = useState(false);
   useEffect(() => { fetchVoiceStatus().then(setVoice, () => setVoice(null)); }, []);
+  // what the transcription server offers; none (or a failed ask) leaves the model a free text field
+  const [voiceModels, setVoiceModels] = useState<VoiceModels["models"]>([]);
+  const modelsFrom = voice?.configured ? voice.base_url : null;
+  useEffect(() => {
+    setVoiceModels([]);
+    if (modelsFrom !== null) fetchVoiceModels().then(({ models }) => setVoiceModels(models), () => {});
+  }, [modelsFrom]);
   /** On asks now, so the first dictation does not stop at the browser's permission prompt */
   const chooseVoiceInput = async (voiceInput: VoiceButton) => {
     update({ voiceInput });
@@ -645,7 +652,7 @@ function VoicePage() {
             </p>
           )}
           {voice && voice.source !== "env" && (
-            <ProviderForm key={`${voice.base_url} ${voice.transcribe_model}`} busy={voiceBusy} base={voice.base_url} model={voice.transcribe_model}
+            <ProviderForm key={`${voice.base_url} ${voice.transcribe_model}`} busy={voiceBusy} base={voice.base_url} model={voice.transcribe_model} models={voiceModels}
               onSave={(base, model) => changeVoiceConfig({
                 ...(base !== voice.base_url ? { base_url: base || null } : {}),
                 ...(model !== voice.transcribe_model ? { transcribe_model: model || null } : {}),
@@ -693,8 +700,8 @@ function VoicePage() {
 }
 
 /** An OpenAI-compatible server and its model; Save sends only what changed. */
-function ProviderForm({ base, model, busy, basePlaceholder, onSave, children }: {
-  base: string; model: string; busy: boolean; basePlaceholder?: string;
+function ProviderForm({ base, model, busy, basePlaceholder, models = [], onSave, children }: {
+  base: string; model: string; busy: boolean; basePlaceholder?: string; models?: VoiceModels["models"];
   onSave: (base: string, model: string) => Promise<boolean>; children?: ReactNode;
 }) {
   const t = useT();
@@ -704,7 +711,14 @@ function ProviderForm({ base, model, busy, basePlaceholder, onSave, children }: 
   return (
     <form className="voice-key" onSubmit={(event) => { event.preventDefault(); void onSave(nextBase.trim(), nextModel.trim()); }}>
       <input {...field} type="url" value={nextBase} placeholder={basePlaceholder ?? "https://api.openai.com/v1"} aria-label={t("Server URL")} onChange={(event) => setNextBase(event.target.value)} />
-      <input {...field} value={nextModel} aria-label={t("Model name")} placeholder={t("Model name")} onChange={(event) => setNextModel(event.target.value)} />
+      {models.length > 0 ? (
+        <select className="input voice-key-input" value={nextModel} aria-label={t("Model name")} onChange={(event) => setNextModel(event.target.value)}>
+          {!models.some((entry) => entry.id === nextModel) && <option value={nextModel}>{nextModel}</option>}
+          {models.map((entry) => <option key={entry.id} value={entry.id}>{entry.name ?? entry.id}</option>)}
+        </select>
+      ) : (
+        <input {...field} value={nextModel} aria-label={t("Model name")} placeholder={t("Model name")} onChange={(event) => setNextModel(event.target.value)} />
+      )}
       {children}
       <button type="submit" className="btn" disabled={busy}>{t("Save server")}</button>
     </form>

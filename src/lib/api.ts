@@ -84,7 +84,7 @@ import type { PaneScrollInfo } from "../../shared/herdr-api.generated.ts";
 import { readInstalledNotes, readUpdateNotes, type HerdrUpdateStatus, type InstalledNotes, type UpdateNotes, type UpdateRequest, type UpdateStatus } from "../../shared/update.ts";
 import type { AlertPrefs } from "../../shared/notify-policy.ts";
 import type { TelemetryChange, TelemetryStatus } from "../../shared/telemetry.ts";
-import type { VoiceConfigUpdate, VoiceStatus } from "../../shared/voice.ts";
+import type { VoiceConfigUpdate, VoiceModels, VoiceStatus } from "../../shared/voice.ts";
 import { MAX_ATTACHMENT_BYTES } from "../../shared/attachments.ts";
 import { t } from "./i18n.ts";
 import { chatReadDeadlineMs, withChatReadDeadline } from "./chatReadDeadline.ts";
@@ -979,6 +979,13 @@ export async function fetchVoiceStatus(): Promise<VoiceStatus> {
   const response = await fetch("/api/voice", { cache: "no-store" });
   if (!response.ok) throw await errorFrom("/api/voice", response);
   return (await response.json()) as VoiceStatus;
+}
+
+/** GET /api/voice/models: the transcription server's models, for the picker. */
+export async function fetchVoiceModels(): Promise<VoiceModels> {
+  const response = await fetch("/api/voice/models", { cache: "no-store" });
+  if (!response.ok) throw await errorFrom("/api/voice/models", response);
+  return (await response.json()) as VoiceModels;
 }
 
 /** PUT /api/voice/config: ApiError 409 `key_from_env` when the key comes from OVIS_OPENAI_API_KEY. */

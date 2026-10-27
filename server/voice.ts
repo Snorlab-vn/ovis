@@ -9,7 +9,7 @@ import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import {
   VOICE_DEFAULTS, VOICE_FORM, VOICE_KEYWORD_MAX_CHARS, VOICE_KEYWORDS_MAX, VOICE_MAX_AUDIO_BYTES,
-  type VoiceErrorCode, type VoiceEvent, type VoiceMode, type VoiceStatus,
+  type VoiceErrorCode, type VoiceEvent, type VoiceMode, type VoiceModels, type VoiceStatus,
 } from "../shared/voice.ts";
 import { isLoopbackBind } from "./access.ts";
 import { errorResponse, isJsonObject, jsonResponse, setRequestRoute } from "./http.ts";
@@ -310,6 +310,27 @@ export class VoiceService {
     return this.status();
   }
 
+  /** The transcription server's `/models`, for the model picker; its key goes only there. */
+  async models(signal: AbortSignal): Promise<VoiceModels> {
+    const { key, base } = this.settings(this.read());
+    if (!key && !onThisMachine(base)) throw new VoiceError("voice_not_configured", 409, "Set an OpenAI API key for voice input");
+    let response: Response;
+    try {
+      response = await this.fetch(`${base}/models`, { headers: bearer(key), signal });
+    } catch (error) {
+      throw new VoiceError("provider_error", 502, scrub(`Could not reach the provider: ${error instanceof Error ? error.message : String(error)}`, key));
+    }
+    if (!response.ok) throw await providerFailure(response, key);
+    const data = record(await response.json())["data"];
+    const models = (Array.isArray(data) ? data : []).map(record).flatMap((entry) => {
+      const id = text(entry["id"]);
+      if (!id) return [];
+      const name = text(entry["name"]);
+      return [name ? { id, name } : { id }];
+    });
+    return { models };
+  }
+
   /**
    * Starts the transcription and answers once the provider accepted it: a refusal before that
    * throws a VoiceError, anything after is an `error` line. `signal` is the client's: when it goes,
@@ -405,6 +426,11 @@ export async function handleVoiceRequest(request: Request, pathname: string, ser
     let body: unknown;
     try { body = await request.json(); } catch { return voiceError(invalid("Send a JSON object")); }
     try { return jsonResponse(service.update(body), 200, noStore); } catch (error) { return voiceError(error); }
+  }
+  if (pathname === "/api/voice/models") {
+    setRequestRoute(pathname);
+    if (request.method !== "GET") return jsonResponse({ error: { code: "method_not_allowed", message: "Use GET /api/voice/models" } }, 405, { allow: "GET" });
+    try { return jsonResponse(await service.models(request.signal), 200, noStore); } catch (error) { return voiceError(error); }
   }
   if (pathname === "/api/voice/transcribe") {
     setRequestRoute(pathname);

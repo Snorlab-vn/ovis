@@ -547,7 +547,8 @@ describe("voice API", () => {
     const at = (path: string) => `http://localhost:${open.port}${path}`;
     try {
       expect((await fetch(`http://localhost:${gated.port}/api/voice`)).status).toBe(401);
-      expect(await (await fetch(at("/api/voice"))).json()).toMatchObject({ configured: false, source: null });
+      // the provider is on this machine: it needs no key to count as set up
+      expect(await (await fetch(at("/api/voice"))).json()).toMatchObject({ configured: true, source: null });
 
       const crossSite = await fetch(at("/api/voice/config"), { method: "PUT", headers: { "content-type": "application/json", "sec-fetch-site": "cross-site" }, body: JSON.stringify({ api_key: key }) });
       expect(crossSite.status).toBe(403);

@@ -344,6 +344,17 @@ describe("voice on this machine and tidying elsewhere", () => {
     expect((await put(voice, { polish_api_key: POLISH_KEY })).status).toBe(400);
   });
 
+  it("lists the transcription server's models, with its key and only there", async () => {
+    handler = (url, init) => {
+      expect(url).toBe("https://api.openai.com/v1/models");
+      expect(new Headers(init.headers).get("authorization")).toBe(`Bearer ${KEY}`);
+      return Response.json({ data: [{ id: "gpt-transcribe" }, { id: "handy:qwen", name: "Qwen3-ASR (Handy)" }, { name: "no id" }] });
+    };
+    const response = await call(service({ OVIS_OPENAI_API_KEY: KEY }), "/api/voice/models");
+    expect(await response.json()).toEqual({ models: [{ id: "gpt-transcribe" }, { id: "handy:qwen", name: "Qwen3-ASR (Handy)" }] });
+    expect((await call(service(), "/api/voice/models")).status).toBe(409);
+  });
+
   it("drops a saved key when it moves to a server on this machine", () => {
     const voice = service();
     voice.update({ api_key: KEY });
