@@ -1831,7 +1831,8 @@ async function route(url: URL, method: string, init: RequestInit | undefined, in
     return json({ ...made, first_message: agent !== null ? { id: queueFirstMessage(pane.pane_id, body["first_message"], body["first_message_connection"]).id } : null });
   }
   // no key in the demo: the app falls back to the browser's own speech recognition
-  if (path === "/api/voice") return json({ configured: false, source: null, ...VOICE_DEFAULTS } satisfies VoiceStatus, 200, { "cache-control": "no-store" });
+  if (path === "/api/voice") return json({ configured: false, source: null, ...VOICE_DEFAULTS, polish_base_url: null, polish_key_set: false } satisfies VoiceStatus, 200, { "cache-control": "no-store" });
+  if (path === "/api/voice/models") return json({ models: [] }, 200, { "cache-control": "no-store" });
   if (path === "/api/voice/config") return error("demo", "the demo saves no OpenAI key", 409);
   if (path === "/api/voice/transcribe") return error("voice_not_configured", "transcription is unavailable in the demo", 409);
   if (path === "/api/workspace/diff/files" || path === "/api/workspace/diff/file" || path === "/api/workspace/diff/refs") {
