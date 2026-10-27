@@ -327,6 +327,7 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions, watching = 
     // orderVersion: the coordinator's order changed
     [reorder, orderVersion, machineId, snapshot]);
   const [dragWorkspaceId, setDragWorkspaceId] = useState<string | null>(null);
+  const [dragFolderKey, setDragFolderKey] = useState<string | null>(null);
   // a finger's drag (lib/touchReorder.ts): the row it holds and the row it is over
   const [touchDrag, setTouchDrag] = useState<{ source: string; over: string | null } | null>(null);
   // the browser's drag and drop is a mouse's: on a touch screen a long press lifts the row instead
@@ -629,12 +630,20 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions, watching = 
     const whole = worktreeGroups.find((candidate) => candidate.workspace.workspace_id === group.workspace.workspace_id) ?? group;
     return [whole.workspace, ...whole.children].map((workspace) => workspace.workspace_id);
   };
+  // in the folder tree a workspace moves among its own folder's groups: its folder is its directory's,
+  // so a drop in another folder would not stay there; a folder moves whole by its own row
+  const folderKeyOf = (workspaceId: string): string | null => {
+    const workspace = snapshot?.workspaces.find((candidate) => candidate.workspace_id === workspaceId);
+    return workspace ? folderOf(workspace).key : null;
+  };
+  const sameFolder = (left: string, right: string): boolean => !byFolder || folderKeyOf(left) === folderKeyOf(right);
   const moveOrder = (workspaceId: string, direction: -1 | 1): string[] | null => {
     const side = direction === 1 ? "after" : "before";
-    const groupIndex = movableGroups.findIndex((group) => group.workspace.workspace_id === workspaceId);
+    const neighbours = movableGroups.filter((group) => sameFolder(group.workspace.workspace_id, workspaceId));
+    const groupIndex = neighbours.findIndex((group) => group.workspace.workspace_id === workspaceId);
     if (groupIndex >= 0) {
-      const target = movableGroups[groupIndex + direction];
-      return target ? placeBlock(workspaceOrder, groupIds(movableGroups[groupIndex]!), groupIds(target), side) : null;
+      const target = neighbours[groupIndex + direction];
+      return target ? placeBlock(workspaceOrder, groupIds(neighbours[groupIndex]!), groupIds(target), side) : null;
     }
     const parent = movableGroups.find((group) => group.children.some((child) => child.workspace_id === workspaceId));
     if (!parent) return null;
@@ -672,7 +681,7 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions, watching = 
     const sourceGroup = movableGroups.find((group) => group.workspace.workspace_id === sourceId);
     if (sourceGroup) {
       const targetGroup = movableGroups.find((group) => group.workspace.workspace_id === targetId || group.children.some((child) => child.workspace_id === targetId));
-      if (!targetGroup || targetGroup === sourceGroup) return null;
+      if (!targetGroup || targetGroup === sourceGroup || !sameFolder(sourceId, targetGroup.workspace.workspace_id)) return null;
       const movingDown = workspaceOrder.indexOf(sourceId) < workspaceOrder.indexOf(targetGroup.workspace.workspace_id);
       return placeBlock(workspaceOrder, groupIds(sourceGroup), groupIds(targetGroup), movingDown ? "after" : "before");
     }
@@ -943,8 +952,26 @@ export function Sidebar({ snapshot, online, selectedPaneId, actions, watching = 
     const holdsSelection = (group: WorkspaceGroup<WorkspaceInfo>): boolean => panes.some((pane) => pane.pane_id === selectedPaneId && (pane.workspace_id === group.workspace.workspace_id || group.children.some((child) => child.workspace_id === pane.workspace_id)));
     const shown = folded ? folder.groups.filter(holdsSelection) : folder.groups;
     const contentsId = `${rosterId}-folder-${encodeURIComponent(folder.key)}`;
-    return <li className={`sidebar-folder${folded ? " is-collapsed" : ""}`} key={folder.key} data-folder={folder.key}>
-      <div className="sidebar-folder-header">
+    // a folder's row drags its workspaces as one block, before or after another folder's, in herdr's order
+    const folderIds = (key: string): string[] => visibleFolders.find((candidate) => candidate.key === key)?.groups.flatMap(groupIds) ?? [];
+    const dropFolder = (event: DragEvent<HTMLElement>): void => {
+      const source = dragFolderKey;
+      setDragFolderKey(null);
+      if (source === null || source === folder.key || filtered !== null) return;
+      event.preventDefault();
+      const block = folderIds(source);
+      const around = folderIds(folder.key);
+      const down = workspaceOrder.indexOf(block[0] ?? "") < workspaceOrder.indexOf(around[0] ?? "");
+      const next = placeBlock(workspaceOrder, block, around, down ? "after" : "before");
+      if (workspaceMoves(workspaceOrder, next).length > 0) reorderWorkspaces(next);
+    };
+    return <li className={`sidebar-folder${folded ? " is-collapsed" : ""}${dragFolderKey === folder.key ? " is-dragging" : ""}`} key={folder.key} data-folder={folder.key}
+      onDragOver={(event) => { if (dragFolderKey !== null) { event.preventDefault(); event.dataTransfer.dropEffect = "move"; } }}
+      onDrop={dropFolder}>
+      <div className="sidebar-folder-header"
+        draggable={!coarsePointer && filtered === null}
+        onDragStart={(event) => { setDragFolderKey(folder.key); event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", folder.name); }}
+        onDragEnd={() => setDragFolderKey(null)}>
         <button type="button" className="sidebar-folder-toggle" aria-expanded={!folded} aria-controls={contentsId} title={folder.key.startsWith("workspace:") ? folder.name : folder.key} onClick={() => toggleWorktrees(foldKey, folded)}>
           {folded ? <ChevronRight aria-hidden="true" /> : <ChevronDown aria-hidden="true" />}
           {folded ? <Folder aria-hidden="true" /> : <FolderOpen aria-hidden="true" />}

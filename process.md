@@ -46,8 +46,8 @@ exactly (the safety net); drag stays smooth (a workspace within its folder, a fo
 | 1.4 Folder row: fold, name, count; fold state per PC in localStorage like the worktree fold | done | folded row carries its panes' rolled-up state | Folds share the worktree fold state under `folder:<dir>`; a workspace row drops its folder face in the tree.
 | 1.5 Pane rows under a workspace (agent mark, title, state, unread), reusing AgentSidebar's row parts; a workspace row folds its panes | done | click selects that pane | `AgentRowBody` and `agentRowText` moved into `Sidebar.tsx` (shared with the Agents list, no import cycle); a workspace of 2+ panes lists them, one line each; menu: Mute alerts (agent pins not offered in the tree). Workspace rows do not fold their panes (the folder does).
 | 1.6 Hide the Agents list while grouped; keep its features reachable (Activity order, filter matches panes) | done | | `MachineSidebar` mounts `AgentSidebar` only for Workspaces; "Agents order" is inert in the tree.
-| 1.7 Drag: a workspace within its folder, a folder as a block (`placeBlock`/`workspaceMoves`) | todo | touch reorder too |
-| 1.8 Filter: matches workspaces and panes, opens folds it needs | todo | reuse `filterWorkspaceGroups` |
+| 1.7 Drag: a workspace within its folder, a folder as a block (`placeBlock`/`workspaceMoves`) | done | touch reorder too | Drag and Alt+↑/↓ stay inside the folder; a folder row drags its workspaces as one block. Not yet run on the demo session (1.9).
+| 1.8 Filter: matches workspaces and panes, opens folds it needs | done | reuse `filterWorkspaceGroups` | Checked live: "iap" leaves one folder with its matches; pane rows follow `filtered.panes`.
 | 1.9 Tests, browser check (desktop, 390px), changelog fragment, DESIGN.md entry | todo | owner kept By folder as the code default: the browser scripts that read the old sidebar seed `sidebarLayout: "workspaces"`; advisor + vision e2e check before handing over |
 
 ## Step 2: Needs attention and "answered ago"

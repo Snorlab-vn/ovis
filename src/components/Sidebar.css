@@ -559,7 +559,8 @@ button.sidebar-section-label:focus-visible { outline-offset: calc(var(--ring-off
   color: var(--text);
 }
 
-.workspace.is-dragging {
+.workspace.is-dragging,
+.sidebar-folder.is-dragging {
   opacity: 0.55;
 }
 
