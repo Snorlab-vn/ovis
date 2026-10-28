@@ -8,6 +8,7 @@
  * Register and fixed terms follow ../i18n.ja.ts; a key another feature also uses goes there.
  */
 export const CHAT_JA: Record<string, string> = {
+  "Interrupted": "中断",
   "Claude goes back to before this message and gets the new one in its place.": "Claude はこのメッセージの前に戻り、新しいメッセージを代わりに受け取ります。",
   "Edit and send again": "編集して送り直す",
   "Edit message": "メッセージを編集",

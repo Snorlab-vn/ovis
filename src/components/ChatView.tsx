@@ -1036,6 +1036,7 @@ function TeammateMessageRow({ message, stateKey }: { message: TeammateMessage; s
 /** what a runtime notice was: a background result by name, anything else by its own first line */
 function noticeLabel(t: ReturnType<typeof useT>, notice: Extract<ConversationPart, { kind: "notice" }>): string {
   if (notice.source === undefined || notice.source === "async-result") return t("Background result delivered");
+  if (notice.source === "interrupted") return t("Interrupted");
   if (notice.source.startsWith("peer:")) {
     const name = notice.source.slice(5);
     return name ? t("Message from another session: {name}", { name }) : t("Message from another session");

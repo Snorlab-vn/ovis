@@ -8,6 +8,7 @@
  * Register and fixed terms follow ../i18n.zh.ts; a key another feature also uses goes there.
  */
 export const CHAT_ZH: Record<string, string> = {
+  "Interrupted": "已中断",
   "Claude goes back to before this message and gets the new one in its place.": "Claude 会回到这条消息之前，并用新消息替代它。",
   "Edit and send again": "编辑后重新发送",
   "Edit message": "编辑消息",

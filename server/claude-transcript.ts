@@ -237,6 +237,9 @@ function claudeParseState(options: ClaudeTranscriptOptions): ClaudeParseState {
  * once however many records carry it; `options.subagents` holds what the subagents' own files say
  * of them, by agent id, since the parser reads no files. Other notifications stay hidden.
  */
+/** the record Claude Code writes when the user stops a turn (with Esc, or by sending while a tool runs) */
+const INTERRUPTED = /^\[Request interrupted by user(?: for tool use)?\]$/;
+
 export function createClaudeTranscriptParser(options: ClaudeTranscriptOptions = {}): TranscriptParser {
   return claudeTranscriptParser(options, claudeParseState(options));
 }
@@ -267,12 +270,17 @@ function claudeTranscriptParser(options: ClaudeTranscriptOptions, state: ClaudeP
 
   /** the last human prompt and the entry it hangs from: a send Claude Code cancelled before
    *  any reply is re-sent as a sibling of it, and its own screen shows only the re-send */
-  const pushPrompt = (turn: ConversationTurn, entry: TranscriptEntry): void => {
+  /** a record hanging from where the last unanswered prompt hangs: that prompt left the branch */
+  const dropSupersededPrompt = (entry: TranscriptEntry): void => {
     const { lastPrompt } = state;
     if (lastPrompt !== null && !lastPrompt.answered && typeof entry.parentUuid === "string" && entry.parentUuid === lastPrompt.parent) {
       const index = turns.indexOf(lastPrompt.turn);
       if (index !== -1) turns.splice(index, 1);
+      state.lastPrompt = null;
     }
+  };
+  const pushPrompt = (turn: ConversationTurn, entry: TranscriptEntry): void => {
+    dropSupersededPrompt(entry);
     turns.push(turn);
     state.lastPrompt = { turn, parent: entry.parentUuid, answered: false };
   };
@@ -345,7 +353,9 @@ function claudeTranscriptParser(options: ClaudeTranscriptOptions, state: ClaudeP
     }
 
     if (entry.type === "user" && typeof content === "string") {
-      if (notified(content, entry.timestamp ?? null)) return;
+      // a background task's notification Claude took before a prompt queued meanwhile: the prompt is
+      // sent again later from elsewhere, and the one left beside the notification is off the branch
+      if (notified(content, entry.timestamp ?? null)) { dropSupersededPrompt(entry); return; }
       const invocation = claudeCommandEcho(content);
       if (invocation) {
         pushPrompt({ role: "user", ts: entry.timestamp ?? null, parts: [{ kind: "text", text: invocation.text }, { kind: "skill", skill: invocation.skill }] }, entry);
@@ -387,6 +397,11 @@ function claudeTranscriptParser(options: ClaudeTranscriptOptions, state: ClaudeP
         if (pictures.length > 0) tool.images = pictures;
       }
       const images = claudeImages(entry.uuid, content).map((image) => ({ kind: "image" as const, ...image }));
+      // Claude Code's mark of a turn the user stopped: its screen says "Interrupted" under the turn, not a message of the user's
+      if (images.length === 0 && invocations.length === 0 && INTERRUPTED.test(prompt.trim())) {
+        turns.push({ role: "user", ts: entry.timestamp ?? null, parts: [{ kind: "notice", text: prompt.trim(), source: "interrupted" }] });
+        return;
+      }
       if (prompt.trim() || images.length > 0) pushPrompt({ role: "user", ts: entry.timestamp ?? null, parts: [...images, ...(prompt.trim() ? [{ kind: "text" as const, text: unwrapPastes(prompt) }] : []), ...invocations] }, entry);
       return;
     }
