@@ -101,23 +101,39 @@ export async function rewindAndSend(paneId: string, message: string, skip: numbe
   await paneSendText(paneId, "/rewind");
   await Bun.sleep(POLL_MS);
   await paneSendKeys(paneId, ["Enter"]);
-  let screen = await until(paneId, (current) => rewindCursorRow(current) !== null);
-  if (screen === null) return leave(paneId, "rewind_not_opened", "Claude's rewind did not open");
+  const opened = await until(paneId, (current) => rewindCursorRow(current) !== null);
+  if (opened === null) return leave(paneId, "rewind_not_opened", "Claude's rewind did not open");
+  let screen: string = opened;
 
+  // the chat can show copies Claude no longer lists (one sent again after an interrupted turn): with
+  // fewer matches than `skip` asks to pass, the oldest copy Claude has is the one to go back to
   let skipped = 0;
-  for (let rows = 0; ; rows++) {
+  let oldest: number | null = null;
+  let ups = 0;
+  for (;;) {
     const row = rewindCursorRow(screen)!;
     if (rewindRowMatches(row, message)) {
       if (skipped === skip) break;
       skipped += 1;
+      oldest = ups;
     }
-    if (rows >= MAX_ROWS) return leave(paneId, "message_not_found", "The message is not in Claude's rewind list");
-    const shown = panel(screen)!.join("\n");
-    await paneSendKeys(paneId, ["Up"]);
+    const shown: string = panel(screen)!.join("\n");
     // a move redraws the list; a list that stays as it was is at its top
-    const moved = await until(paneId, (current) => rewindCursorRow(current) !== null && panel(current)!.join("\n") !== shown);
-    if (moved === null) return leave(paneId, "message_not_found", "The message is not in Claude's rewind list");
-    screen = moved;
+    const moved: string | null = ups >= MAX_ROWS ? null : await (async (): Promise<string | null> => {
+      await paneSendKeys(paneId, ["Up"]);
+      return until(paneId, (current) => rewindCursorRow(current) !== null && panel(current)!.join("\n") !== shown);
+    })();
+    if (moved !== null) { ups += 1; screen = moved; continue; }
+    if (oldest === null) return leave(paneId, "message_not_found", "The message is not in Claude's rewind list");
+    for (; ups > oldest; ups--) {
+      const here = panel(screen)!.join("\n");
+      await paneSendKeys(paneId, ["Down"]);
+      const back: string | null = await until(paneId, (current) => rewindCursorRow(current) !== null && panel(current)!.join("\n") !== here);
+      if (back === null) return leave(paneId, "message_not_found", "The message is not in Claude's rewind list");
+      screen = back;
+    }
+    if (!rewindRowMatches(rewindCursorRow(screen)!, message)) return leave(paneId, "message_not_found", "The message is not in Claude's rewind list");
+    break;
   }
 
   await paneSendKeys(paneId, ["Enter"]);

@@ -67,6 +67,7 @@ class FakeClaude {
       else if (key === "Backspace" && !this.stuck) this.box = this.box.length > 0 && this.box.at(-1) === "" ? this.box.slice(0, -1) : this.box;
     } else if (this.mode === "picker") {
       if (key === "Up") this.cursor = Math.max(0, this.cursor - 1);
+      if (key === "Down") this.cursor = Math.min(this.messages.length, this.cursor + 1);
       if (key === "Enter" && this.cursor < this.messages.length) this.mode = "confirm";
       if (key === "Escape") this.mode = "idle";
     } else if (key === "1") {
@@ -117,6 +118,13 @@ describe("POST /api/pane/rewind", () => {
     claude = new FakeClaude(["go on", "check", "go on"]);
     expect(await rewind({ message: "go on", skip: 1, text: "stop" })).toEqual([200, "ok"]);
     expect(claude.messages).toEqual([]);
+  });
+
+  it("goes back to the oldest copy Claude still lists when the chat shows more copies than Claude has", async () => {
+    claude = new FakeClaude(["Reply ALPHA", "say Hi", "Reply BRAVO"]);
+    expect(await rewind({ message: "say Hi", skip: 1, text: "say Hii" })).toEqual([200, "ok"]);
+    expect(claude.messages).toEqual(["Reply ALPHA"]);
+    expect(claude.sent).toEqual(["say Hii"]);
   });
 
   it("leaves the dialog and sends nothing when the message is not in the list", async () => {

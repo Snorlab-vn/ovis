@@ -2148,7 +2148,9 @@ export const ChatView = memo(function ChatView({ paneId, presentationKey, finish
       await rewindPane(paneId, message, skip, text);
       return null;
     } catch (reason) {
-      return userErrorMessage(reason).message;
+      // the server's own words name the step that refused (server/claude-rewind.ts); a 409 alone reads as a generic change
+      const failure = userErrorMessage(reason);
+      return failure.detail ?? failure.message;
     }
   }, [paneId, rewindPane]);
   const editResendOffered = offered === "edit" ? editResend : null;
